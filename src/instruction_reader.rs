@@ -10,6 +10,7 @@ pub fn read_instruction(input : &[u8], index_in : &mut usize)
 		return Err(ReadError::IndexOutOfBounds(index, input.len()))
 	}
 
+	/* Begin to match load bytecodes */
 	match input[0] {
 		//aload
 		0x19 => {
@@ -46,7 +47,7 @@ pub fn read_instruction(input : &[u8], index_in : &mut usize)
 
 	//aload_0..aload_3
 	if input[0] <= 0x2d && input[0] >= 0x2a {
-		let from_where = input[0] - 0x2d;
+		let from_where = input[0] - 0x2a;
 		*index_in = index + 1;
 		return Ok(Instruction::Load(Kind::Ref, from_where));	
 	}
@@ -62,7 +63,7 @@ pub fn read_instruction(input : &[u8], index_in : &mut usize)
 	if input[0] >= 0x22 && input[0] <= 0x25 {
 		let from_where = input[0] - 0x22;
 		*index_in = index + 1;
-		return Ok(Instruction::Load(Kind::Double, from_where));	
+		return Ok(Instruction::Load(Kind::Float, from_where));	
 	}
 
 	//fload_0..fload_3
@@ -78,6 +79,9 @@ pub fn read_instruction(input : &[u8], index_in : &mut usize)
 		*index_in = index + 1;
 		return Ok(Instruction::Load(Kind::Long, from_where));	
 	}
+
+	/* End match load bytecodes */
+
 
 	return Err(ReadError::NotImplemented("Opcode not implemented".to_string()));
 }
