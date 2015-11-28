@@ -1,0 +1,4 @@
+[package]
+name = "bytecode"
+version = "0.1.0"
+authors = ["Mate Antunovic <mate.a@blackpearlmail.com>"]
