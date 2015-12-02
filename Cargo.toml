@@ -2,3 +2,6 @@
 name = "bytecode"
 version = "0.1.0"
 authors = ["Mate Antunovic <mate.a@blackpearlmail.com>"]
+
+[dependencies]
+byteorder = "0.4.2"

@@ -82,7 +82,6 @@ pub fn read_instruction(input : &[u8], index_in : &mut usize)
 
 	/* End match load bytecodes */
 
-
 	return Err(ReadError::NotImplemented("Opcode not implemented".to_string()));
 }
 
