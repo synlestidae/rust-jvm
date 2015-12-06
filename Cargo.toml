@@ -1,7 +1,8 @@
 [package]
 name = "bytecode"
 version = "0.1.0"
-authors = ["Mate Antunovic <mate.a@blackpearlmail.com>"]
+authors = ["Mate Antunovic <just.mate.antunovic@gmail.com>"]
 
 [dependencies]
 byteorder = "0.4.2"
+bit-vec = "0.4.2"

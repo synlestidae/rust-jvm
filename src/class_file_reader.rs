@@ -1,11 +1,15 @@
 use std::io::Read;
 use classfile::*;
+use std::io::Cursor;
+use byteorder::{BigEndian, ReadBytesExt};
+use bit_vec::BitVec;
+
 
 pub type ReadError = (usize, String);
 
 pub fn read_class_file(source : &mut Read) -> Result<ClassFile, ReadError> {
+	println!("Reading into buf");
 	let mut buf = Vec::new();
-
 	source.read_to_end(&mut buf);
 
 	if buf.len() < 4 {
@@ -16,46 +20,90 @@ pub fn read_class_file(source : &mut Read) -> Result<ClassFile, ReadError> {
 		return Err((buf.len() - 1, "Expected major/minor version. Class file too short.".to_string()))
 	}
 
-	let major_version = buf[7];
-	let minor_version = buf[8];
+	println!("Reading major, minor numbers");
+	let major_version = read_u16(buf[4], buf[5]);
+	let minor_version = read_u16(buf[6], buf[7]);
 
 	if buf.len() < 10 {
 		return Err((buf.len() - 1, "Expected constant pool offset. Class file too short.".to_string()))
 	}
 
+	println!("Reading the constant pool of ");
 	//parse the variable-length constant pool
-	let constant_pool_count = (buf[8] as i16) << 8 + (buf[9] as i16);
+	let constant_pool_count = read_u16(buf[8],buf[9]);
+	println!("Reading the constant pool of count {}", constant_pool_count);
 	let mut index = 10;
 	let mut constant_pool : Vec<CpInfo> = Vec::new();
-	for i in 0..constant_pool_count {
+	for i in 0..(constant_pool_count-1) {
 		let cp_info_entry = try!(read_constant_pool_entry(&mut buf, &mut index));
 		constant_pool.push(cp_info_entry);
 	}
 
 	let cpsize = (index + 1) - 10;
+	println!("Reading the flags and things");
+	let access_flags = read_u16(buf[cpsize + 10], buf[cpsize + 11]);
+	let this_class = read_u16(buf[cpsize + 12], buf[cpsize + 13]);
+	let super_class = read_u16(buf[cpsize + 14], buf[cpsize + 15]);
 
-	/** 
-	10+cpsize :
-	**/
-
-	let access_flags = (buf[cpsize + 10] as i16) << 8 + (buf[cpsize + 11] as i16)
-
-	let this_class = (buf[cpsize + 12] as i16) << 8 + (buf[cpsize + 13] as i16);
-	let super_class = (buf[cpsize + 14] as i16) << 8 + (buf[cpsize + 15] as i16);
-	let interfaces_size = (buf[cpsize + 16] as i16) << 8 + (buf[cpsize + 17] as i16);
-	
+	println!("Reading the interfaces");
+	let interfaces_size = read_u16(buf[cpsize + 16], buf[cpsize + 17]);
 	let mut interfaces : Vec<u8> = Vec::new();
-	for i in (18+cpsize)..(18+cpsize+interfaces_size) {
+	for i in (18+cpsize)..(18+cpsize+interfaces_size as usize) {
 		interfaces.push(buf[i]);
 	}
 
-	let field_count = (buf[20 + cpsize + interfaces_size] as i16) << 8 + (buf[21 + cpsize + interfaces_size] as i16);
+	println!("Reading field count");
+	let field_count = read_u16(buf[18 + cpsize + interfaces_size as usize], 
+		buf[20 + cpsize + interfaces_size as usize]);
 
+	index = 21 + cpsize + interfaces_size as usize + 1;
+
+	println!("Reading field info entries");
+	let mut field_info_entries = Vec::new();
 	for i in 0..field_count {
-
+		let field_info_entry = try!(read_info_entry(&mut buf, &mut index));
+		field_info_entries.push(field_info_entry);
 	}
 
-	panic!("Not implemented");
+	if index + 1 > buf.len() {
+		return Err((index, "Expected number of entries in method table. Class file too short".to_string()));
+	}
+
+	let method_count = read_u16(buf[index], buf[index+1]);
+	index += 2;
+	println!("Reading method infos");
+	let mut method_info_entries = Vec::new();
+	for i in 0..method_count {
+		let method_info_entry = try!(read_info_entry(&mut buf, &mut index));
+		method_info_entries.push(method_info_entry);
+	}
+
+	if index + 1 >= buf.len() {
+		return Err((index, "Expected number of attributes. Class file too short".to_string()));
+	}
+
+	println!("Reading attirbutes");
+	let attribute_count = read_u16(buf[index], buf[index+1]);
+	index += 2;
+
+	let mut attribute_entries = Vec::new();
+	for i in 0..attribute_count {
+		let attribute_info_entry = try!(read_info_entry(&mut buf, &mut index));
+		method_info_entries.push(attribute_info_entry);
+	}
+
+	Ok(ClassFile {
+		minor_version : minor_version,
+		major_version : major_version,
+		constant_pool_table : constant_pool,
+		access_flags : access_flags,
+		this_class_index : this_class,
+		super_class_index : super_class,
+		interface_table : interfaces,
+		field_table : field_info_entries,
+		method_table : method_info_entries,
+		attribute_table : attribute_entries
+	})
 }
 
 pub fn read_constant_pool_entry(source : &mut Vec<u8>, index : &mut usize) 
@@ -63,20 +111,30 @@ pub fn read_constant_pool_entry(source : &mut Vec<u8>, index : &mut usize)
 	let mut local_index = *index;
 
 	if (local_index >= source.len()) {
-		return Err((local_index, "Expected constant pool entry but file size too short".to_string()));
+		return Err((local_index, "Expected constant pool entry but file too short".to_string()));
 	}
 
 	let tag = source[local_index];
-	let additional_byte_count = match tag {
+	println!("The tag: {}", tag);
+	let additional_byte_count : usize = match tag {
 		1 => {
 			//have to deal with variable-length string
-			-1
+			if local_index as usize + 2 >= source.len() {
+				return Err((local_index+1, "Expected additional byte count but file too short".to_string()))
+			}
+
+			let str_len = read_u16(source[local_index+1], source[local_index+2]);
+			if local_index as usize + 2 + str_len as usize >= source.len() {
+				return Err((local_index+2, "Expected constant pool UTF-8 string but file too short".to_string()))
+			}
+
+			str_len as usize
 		},
 		3 => 4,
 		4 => 4,
-		5 => 4,
+		5 => 8,
 		6 => 8,
-		7 => 8,
+		7 => 2,
 		8 => 2,
 		9 => 4,
 		10 => 4,
@@ -85,23 +143,23 @@ pub fn read_constant_pool_entry(source : &mut Vec<u8>, index : &mut usize)
 		15 => 3,
 		16 => 2,
 		18 => 4,
-		_ => -1
+		_ => return Err((local_index, format!("Expected valid constant pool entry tag, but got {}", tag)))
 	};
 
-	if additional_byte_count <= 0 {
-		return Err((local_index, format!("Expected constant pool entry tag, but got {}", tag)));
-	}
+
+	println!("Source len: {} Byte count: {} Local index: {}", source.len(), additional_byte_count, local_index);
+
 	if source.len() <= additional_byte_count + local_index {
 		return Err((local_index, 
 			format!("Expected additional bytes for constant pool entry, but file too short")));
 	}
 
 	let mut additional_bytes = Vec::new();
-	for i in local_index..(local_index+additional_byte_count) {
+	for i in (local_index+1)..(local_index+additional_byte_count) {
 		additional_bytes.push(source[i]);
 	}
 
-	local_index = local_index + additional_byte_count;
+	local_index = local_index + 1 + additional_byte_count;
 	*index = local_index;
 
 	Ok(CpInfo {
@@ -110,7 +168,133 @@ pub fn read_constant_pool_entry(source : &mut Vec<u8>, index : &mut usize)
 	})
 }
 
+fn read_info_entry(source : &mut Vec<u8>, index : &mut usize) 
+	-> Result<Info, ReadError> {
+	let mut local_index = *index;
+	if local_index + 8 >= source.len() {
+		return Err((local_index, "Not enough bytes for fixed-size field_info items".to_string()))
+	}
+
+	let access_flags = read_u16(source[local_index], source[local_index+1]);
+	let name_index = read_u16(source[local_index+2], source[local_index+3]);
+	let descriptor_index = read_u16(source[local_index+4], source[local_index+5]);
+	let attributes_count = read_u16(source[local_index+6], source[local_index+7]);
+
+	if local_index + 14 >= source.len() {
+		return Err((local_index, "Not enough bytes for attribute_info structure".to_string()))
+	}
+	local_index = local_index + 8;
+
+	let attributes_info = try!(read_attributes_info(source, &mut local_index, 
+		attributes_count as usize));
+
+	*index = local_index;
+
+	Ok(FieldInfo {
+		access_flags : access_flags,             
+	    name_index : name_index, 
+	    descriptor_index : descriptor_index,
+	    attributes : attributes_info
+	})
+}
+
+fn read_attributes_info(source : &mut Vec<u8>, index : &mut usize, 
+	attributes_count : usize) -> Result<Vec<AttributeInfo>, ReadError> {
+	
+	let mut attributes_info = Vec::new();
+	let mut local_index = *index;
+	for i in 0..attributes_count {
+		let attribute_name_index = read_u16(source[local_index], source[local_index + 1]);
+		let attribute_length = read_u32(source[local_index + 2], source[local_index + 3], 
+			source[local_index + 4], source[local_index + 5]);
+
+		local_index = local_index + 6;
+		if (attribute_length as usize + local_index as usize) >= source.len() {
+			return Err((local_index+6, "Not enough bytes for attributes".to_string()))
+		}
+
+		let mut info = Vec::new();
+		for i in local_index..(local_index + attribute_length as usize) {
+			info.push(source[i]);
+		}
+
+		local_index = local_index + attribute_length as usize;
+
+		attributes_info.push(AttributeInfo {
+			attribute_name_index : attribute_name_index,
+			info : info
+		});
+	}
+	*index = local_index;
+	Ok(attributes_info)
+}
+
+fn read_method_entry(source : &mut Vec<u8>, index : &mut usize) 
+	-> Result<FieldInfo, ReadError> {
+	let local_index = *index;
+	panic!("TODO");
+}
+
 fn read_interface_entry(source : &mut Vec<u8>, index : &mut usize) 
 	-> Result<Vec<u8>, ReadError> {
+	panic!("Not implemented");	
+}
+
+fn read_u16(b1 : u8, b2 : u8) -> u16 {
+	return Cursor::new(vec![b1,b2]).read_u16::<BigEndian>().unwrap();
+}
+
+fn read_u32(b1 : u8, b2 : u8, b3 : u8, b4 : u8) -> u32 {
+	return Cursor::new(vec![b1,b2,b3,b4]).read_u32::<BigEndian>().unwrap();
+}
+
+fn read_utf_string(buf : &Vec<u8>, index : &mut usize, length : usize) 
+		-> Result<String, ReadError> {
+	let mut output_string = String::new();
+	let bit_vec = BitVec::from_bytes(&buf[*index..(*index+length)]);
+
+	while *index < length {
+		let c = try!(read_char(&bit_vec, index));
+		output_string.push(c);
+	}
+
+	Ok(output_string)
+}
+
+fn read_char(bit_vec : &BitVec, index : &mut usize) -> Result<char, ReadError> {
+	match (bit_vec.get(*index), bit_vec.get(*index + 1), bit_vec.get(*index + 2), 
+				bit_vec.get(*index + 3)) {
+		(Some(false),_,_,_) => {
+			*index += 1;
+			Ok(read_single(bit_vec, index))
+		},
+		(Some(true), Some(true), Some(false), _) => {
+			*index += 1;	
+			Ok(read_low_double(bit_vec, index))
+		},
+		(Some(true), Some(false), _, _) => {
+			*index += 1;
+			Ok(read_high_double(bit_vec, index))
+		},
+		(None, None, None, None) => Err((*index, "Invalid unicode: file too short for modified UTF-8 pattern".to_string())),
+		_ => Err((*index, "Invalid unicode: bits prefix does not match modified UTF-8 pattern".to_string()))
+	}
+}
+
+fn read_single(bit_vec : &BitVec, index : &mut usize) -> char {
 	panic!("Not implemented");
+}
+
+fn read_low_double(bit_vec : &BitVec, index : &mut usize) -> char {
+	panic!("Not implemented");
+}
+
+fn read_high_double(bit_vec : &BitVec, index : &mut usize) -> char {
+	panic!("Not implemented");
+}
+
+fn toNum(x : bool) -> u8 {
+	match x {
+		true => 1, false => 0
+	}
 }
