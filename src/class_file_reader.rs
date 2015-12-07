@@ -39,39 +39,47 @@ pub fn read_class_file(source : &mut Read) -> Result<ClassFile, ReadError> {
 		constant_pool.push(cp_info_entry);
 	}
 
-	let cpsize = (index + 1) - 10;
+	let cpsize = (index) - 10;
+	println!("Size of constant pool: {}", cpsize);
 	println!("Reading the flags and things");
 	let access_flags = read_u16(buf[cpsize + 10], buf[cpsize + 11]);
 	let this_class = read_u16(buf[cpsize + 12], buf[cpsize + 13]);
 	let super_class = read_u16(buf[cpsize + 14], buf[cpsize + 15]);
 
-	println!("Reading the interfaces");
 	let interfaces_size = read_u16(buf[cpsize + 16], buf[cpsize + 17]);
 	let mut interfaces : Vec<u8> = Vec::new();
+	println!("Reading the interfaces at {}", (18 + cpsize));
 	for i in (18+cpsize)..(18+cpsize+interfaces_size as usize) {
 		interfaces.push(buf[i]);
 	}
+	println!("Read {} interfaces", interfaces_size);
 
-	println!("Reading field count");
+
+
+	println!("Reading field count at index {}", 18 + cpsize + interfaces_size as usize);
 	let field_count = read_u16(buf[18 + cpsize + interfaces_size as usize], 
-		buf[20 + cpsize + interfaces_size as usize]);
+		buf[19 + cpsize + interfaces_size as usize]);
 
-	index = 21 + cpsize + interfaces_size as usize + 1;
+	index = 20 + cpsize + interfaces_size as usize;
 
-	println!("Reading field info entries");
+	println!("Reading {} field info entries at index {}", field_count, index);
 	let mut field_info_entries = Vec::new();
+	let old_index = index;
 	for i in 0..field_count {
 		let field_info_entry = try!(read_info_entry(&mut buf, &mut index));
 		field_info_entries.push(field_info_entry);
 	}
+	let fsize = index - old_index;
 
-	if index + 1 > buf.len() {
+	if index + 2 >= buf.len() {
 		return Err((index, "Expected number of entries in method table. Class file too short".to_string()));
 	}
 
+	println!("Reading method count at index {}", index);
+
 	let method_count = read_u16(buf[index], buf[index+1]);
 	index += 2;
-	println!("Reading method infos");
+	println!("Reading method {} infos at index {}", method_count, index);
 	let mut method_info_entries = Vec::new();
 	for i in 0..method_count {
 		let method_info_entry = try!(read_info_entry(&mut buf, &mut index));
@@ -82,9 +90,10 @@ pub fn read_class_file(source : &mut Read) -> Result<ClassFile, ReadError> {
 		return Err((index, "Expected number of attributes. Class file too short".to_string()));
 	}
 
-	println!("Reading attirbutes");
 	let attribute_count = read_u16(buf[index], buf[index+1]);
 	index += 2;
+
+	println!("Reading {} attirbutes at index {}", attribute_count, index);
 
 	let mut attribute_entries = Vec::new();
 	for i in 0..attribute_count {
@@ -192,6 +201,7 @@ fn read_info_entry(source : &mut Vec<u8>, index : &mut usize)
 	if local_index + 14 >= source.len() {
 		return Err((local_index, "Not enough bytes for attribute_info structure".to_string()))
 	}
+
 	local_index = local_index + 8;
 
 	let attributes_info = try!(read_attributes_info(source, &mut local_index, 
@@ -199,7 +209,7 @@ fn read_info_entry(source : &mut Vec<u8>, index : &mut usize)
 
 	*index = local_index;
 
-	Ok(FieldInfo {
+	Ok(Info {
 		access_flags : access_flags,             
 	    name_index : name_index, 
 	    descriptor_index : descriptor_index,
@@ -209,9 +219,9 @@ fn read_info_entry(source : &mut Vec<u8>, index : &mut usize)
 
 fn read_attributes_info(source : &mut Vec<u8>, index : &mut usize, 
 	attributes_count : usize) -> Result<Vec<AttributeInfo>, ReadError> {
-	
 	let mut attributes_info = Vec::new();
 	let mut local_index = *index;
+	
 	for i in 0..attributes_count {
 		let attribute_name_index = read_u16(source[local_index], source[local_index + 1]);
 		let attribute_length = read_u32(source[local_index + 2], source[local_index + 3], 
@@ -219,7 +229,7 @@ fn read_attributes_info(source : &mut Vec<u8>, index : &mut usize,
 
 		local_index = local_index + 6;
 		if (attribute_length as usize + local_index as usize) >= source.len() {
-			return Err((local_index+6, "Not enough bytes for attributes".to_string()))
+			return Err((local_index+6, format!("Attribute length at index {} is {}. Not enough bytes for attributes.", local_index, attribute_length)))
 		}
 
 		let mut info = Vec::new();
