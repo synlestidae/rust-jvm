@@ -3,7 +3,7 @@ use classfile::*;
 use std::io::Cursor;
 use byteorder::{BigEndian, ReadBytesExt};
 use bit_vec::BitVec;
-
+use std::char;
 
 pub type ReadError = (usize, String);
 
@@ -30,11 +30,11 @@ pub fn read_class_file(source : &mut Read) -> Result<ClassFile, ReadError> {
 
 	println!("Reading the constant pool of ");
 	//parse the variable-length constant pool
-	let constant_pool_count = read_u16(buf[8],buf[9]);
+	let constant_pool_count = read_u16(buf[8],buf[9]) - 1;
 	println!("Reading the constant pool of count {}", constant_pool_count);
 	let mut index = 10;
 	let mut constant_pool : Vec<CpInfo> = Vec::new();
-	for i in 0..(constant_pool_count-1) {
+	for i in 0..(constant_pool_count) {
 		let cp_info_entry = try!(read_constant_pool_entry(&mut buf, &mut index));
 		constant_pool.push(cp_info_entry);
 	}
@@ -107,7 +107,7 @@ pub fn read_class_file(source : &mut Read) -> Result<ClassFile, ReadError> {
 }
 
 pub fn read_constant_pool_entry(source : &mut Vec<u8>, index : &mut usize) 
-	-> Result<CpInfo, ReadError> {
+		-> Result<CpInfo, ReadError> {
 	let mut local_index = *index;
 
 	if (local_index >= source.len()) {
@@ -115,7 +115,6 @@ pub fn read_constant_pool_entry(source : &mut Vec<u8>, index : &mut usize)
 	}
 
 	let tag = source[local_index];
-	println!("The tag: {}", tag);
 	let additional_byte_count : usize = match tag {
 		1 => {
 			//have to deal with variable-length string
@@ -128,7 +127,18 @@ pub fn read_constant_pool_entry(source : &mut Vec<u8>, index : &mut usize)
 				return Err((local_index+2, "Expected constant pool UTF-8 string but file too short".to_string()))
 			}
 
-			str_len as usize
+			local_index += 3;
+
+			println!("Trying to read this dang string: {}", local_index);
+
+			let the_string = read_utf_string(source, &mut local_index, str_len as usize);
+			
+			*index = local_index;
+
+			return Ok(CpInfo {
+				tag : tag,
+				additional_bytes : the_string.unwrap().into_bytes()
+			});
 		},
 		3 => 4,
 		4 => 4,
@@ -159,8 +169,7 @@ pub fn read_constant_pool_entry(source : &mut Vec<u8>, index : &mut usize)
 		additional_bytes.push(source[i]);
 	}
 
-	local_index = local_index + 1 + additional_byte_count;
-	*index = local_index;
+	*index = local_index + 1 + additional_byte_count;
 
 	Ok(CpInfo {
 		tag : tag,
@@ -172,7 +181,7 @@ fn read_info_entry(source : &mut Vec<u8>, index : &mut usize)
 	-> Result<Info, ReadError> {
 	let mut local_index = *index;
 	if local_index + 8 >= source.len() {
-		return Err((local_index, "Not enough bytes for fixed-size field_info items".to_string()))
+		return Err((local_index, "Not enough bytes for fixed-size field_info items.".to_string()))
 	}
 
 	let access_flags = read_u16(source[local_index], source[local_index+1]);
@@ -250,47 +259,95 @@ fn read_u32(b1 : u8, b2 : u8, b3 : u8, b4 : u8) -> u32 {
 
 fn read_utf_string(buf : &Vec<u8>, index : &mut usize, length : usize) 
 		-> Result<String, ReadError> {
+	println!("The length of utf 8 string is {}", length);
 	let mut output_string = String::new();
-	let bit_vec = BitVec::from_bytes(&buf[*index..(*index+length)]);
-
-	while *index < length {
-		let c = try!(read_char(&bit_vec, index));
-		output_string.push(c);
+	while output_string.len() < length {
+		let code_point = char::from_u32(try!(read_char(buf, index)));
+		output_string.push(code_point.unwrap());
+		println!("Index: {}, Str: {:}", index, output_string);
 	}
 
 	Ok(output_string)
 }
 
-fn read_char(bit_vec : &BitVec, index : &mut usize) -> Result<char, ReadError> {
-	match (bit_vec.get(*index), bit_vec.get(*index + 1), bit_vec.get(*index + 2), 
-				bit_vec.get(*index + 3)) {
+fn read_char(buf : &Vec<u8>, index : &mut usize) -> Result<u32, ReadError> {
+	let bit_vec = BitVec::from_bytes(&buf[*index..(*index+2)]);
+
+	match (bit_vec.get(0), bit_vec.get(1), bit_vec.get(2), 
+				bit_vec.get(3)) {
 		(Some(false),_,_,_) => {
 			*index += 1;
-			Ok(read_single(bit_vec, index))
+			Ok(buf[*index - 1] as u32)
 		},
 		(Some(true), Some(true), Some(false), _) => {
-			*index += 1;	
-			Ok(read_low_double(bit_vec, index))
+			panic!("Not ready for this");
+			println!("Reading low double");	
+			Ok(read_low_double(&bit_vec, index))
 		},
-		(Some(true), Some(false), _, _) => {
-			*index += 1;
-			Ok(read_high_double(bit_vec, index))
+		(Some(true), Some(true), Some(true), Some(false)) => {
+			panic!("Not ready for this");
+			println!("Warning! Processing of supplementary characters WILL fail.");
+			Ok(read_high_double(&bit_vec, index))
 		},
-		(None, None, None, None) => Err((*index, "Invalid unicode: file too short for modified UTF-8 pattern".to_string())),
-		_ => Err((*index, "Invalid unicode: bits prefix does not match modified UTF-8 pattern".to_string()))
+		(None, None, None, None) => Err((*index, format!("Invalid unicode: there are {} bits but index is {}", bit_vec.len(), *index).to_string())),
+		somethingElse => Err((*index, format!("Invalid unicode: bits prefix {:?} does not match modified UTF-8 pattern", somethingElse).to_string()))
 	}
 }
 
-fn read_single(bit_vec : &BitVec, index : &mut usize) -> char {
-	panic!("Not implemented");
+fn read_single(bit_vec : &BitVec, index : &mut usize) -> u32 {
+	let local_index = *index;
+
+	let x = ((toNum(bit_vec[local_index + 0]) << 6) + (toNum(bit_vec[local_index + 1]) << 5) + 
+			(toNum(bit_vec[local_index + 2]) << 4) + (toNum(bit_vec[local_index + 3]) << 3) + 
+			(toNum(bit_vec[local_index + 4]) << 2) + (toNum(bit_vec[local_index + 5]) << 1) + 
+			(toNum(bit_vec[local_index + 6]))) as u32;
+
+	println!("Readin single {}", x);
+
+	*index += 1;
+
+	x
 }
 
-fn read_low_double(bit_vec : &BitVec, index : &mut usize) -> char {
-	panic!("Not implemented");
+fn read_low_double(bit_vec : &BitVec, index : &mut usize) -> u32 {
+	let local_index = *index;
+
+	let x = ((toNum(bit_vec[local_index + 0]) << 6) + (toNum(bit_vec[local_index + 1]) << 5) + 
+		(toNum(bit_vec[local_index + 2]) << 4) + (toNum(bit_vec[local_index + 3]) << 3) + 
+		(toNum(bit_vec[local_index + 4]) << 2) + (toNum(bit_vec[local_index + 5]) << 1) + 
+		(toNum(bit_vec[local_index + 6]))) as u32;
+
+	let y = ((toNum(bit_vec[local_index + 7]) << 6) + (toNum(bit_vec[local_index + 8]) << 5) + 
+		(toNum(bit_vec[local_index + 9]) << 4) + (toNum(bit_vec[local_index + 10]) << 3) + 
+		(toNum(bit_vec[local_index + 11]) << 2) + (toNum(bit_vec[local_index + 12]) << 1) + 
+		(toNum(bit_vec[local_index + 13]))) as u32;
+
+	*index += 2;
+
+	((x & 0x1f) << 6) + (y & 0x3f)
 }
 
-fn read_high_double(bit_vec : &BitVec, index : &mut usize) -> char {
-	panic!("Not implemented");
+fn read_high_double(bit_vec : &BitVec, index : &mut usize) -> u32 {
+	let local_index = *index;
+
+	let x = ((toNum(bit_vec[local_index + 0]) << 6) + (toNum(bit_vec[local_index + 1]) << 5) + 
+		(toNum(bit_vec[local_index + 2]) << 4) + (toNum(bit_vec[local_index + 3]) << 3) + 
+		(toNum(bit_vec[local_index + 4]) << 2) + (toNum(bit_vec[local_index + 5]) << 1) + 
+		(toNum(bit_vec[local_index + 6]))) as u32;
+
+	let y = ((toNum(bit_vec[local_index + 7]) << 6) + (toNum(bit_vec[local_index + 8]) << 5) + 
+		(toNum(bit_vec[local_index + 9]) << 4) + (toNum(bit_vec[local_index + 10]) << 3) + 
+		(toNum(bit_vec[local_index + 11]) << 2) + (toNum(bit_vec[local_index + 12]) << 1) + 
+		(toNum(bit_vec[local_index + 13]))) as u32;
+
+	let z = ((toNum(bit_vec[local_index + 14]) << 6) + (toNum(bit_vec[local_index + 15]) << 5) + 
+		(toNum(bit_vec[local_index + 16]) << 4) + (toNum(bit_vec[local_index + 17]) << 3) + 
+		(toNum(bit_vec[local_index + 18]) << 2) + (toNum(bit_vec[local_index + 19]) << 1) + 
+		(toNum(bit_vec[local_index + 20]))) as u32;
+
+	*index += 3;
+
+	((x & 0xf) << 12) + ((y & 0x3f) << 6) + (z & 0x3f)
 }
 
 fn toNum(x : bool) -> u8 {
