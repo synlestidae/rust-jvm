@@ -51,12 +51,23 @@ fn test_constant_pool_correct_tags_1() {
 }
 
 #[test]
-fn test_superclass_is_java_lang_Object_1() {
-	let classfile = read_class_file(&mut File::open("./src/tests/data/homemade/Empty.class").unwrap()).unwrap();
-	println!("Index: {:?}", classfile.constant_pool_table);
-	let super_name = (String::from_utf8(classfile.constant_pool_table
-		[classfile.super_class_index as usize - 1]
-		.additional_bytes.clone())).unwrap();
-	assert_eq!("java/lang/Object", &super_name);
+fn test_superclass_index_has_class_tag_1() {
+	let classfile = read_class_file(&mut File::open("./src/tests/data/homemade/Empty.class")
+		.unwrap()).unwrap();
 
+	let super_entry = &classfile.constant_pool_table[classfile.super_class_index
+			as usize - 1];
+
+	assert_eq!(7, super_entry.tag);
+}
+
+#[test]
+fn test_thisclass_index_has_class_tag_1() {
+	let classfile = read_class_file(&mut File::open("./src/tests/data/homemade/Empty.class")
+		.unwrap()).unwrap();
+
+	let super_entry = &classfile.constant_pool_table[classfile.this_class_index
+			as usize - 1];
+
+	assert_eq!(7, super_entry.tag);
 }
