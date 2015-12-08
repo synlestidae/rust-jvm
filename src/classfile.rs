@@ -15,7 +15,7 @@ pub struct ClassFile {
 	pub attribute_table : Vec<AttributeInfo>
 } 
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct CpInfo {
 	pub tag : u8,
 	pub additional_bytes : Vec<u8>

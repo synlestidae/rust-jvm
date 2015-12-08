@@ -8,30 +8,34 @@ use std::char;
 pub type ReadError = (usize, String);
 
 pub fn read_class_file(source : &mut Read) -> Result<ClassFile, ReadError> {
-	println!("Reading into buf");
+	//println!("Reading into buf");
 	let mut buf = Vec::new();
 	source.read_to_end(&mut buf);
 
 	if buf.len() < 4 {
-		return Err((buf.len() - 1, "Expected magic number. Class file too short.".to_string()))
+		return Err((buf.len() - 1, "Expected CAFEBABE magic number. Class file too short.".to_string()))
+	}
+
+	if &buf[0..4] != &[0xca,0xfe,0xba,0xbe] {
+			return Err((0, format!("Expected CAFEBABE magic number. Got {:?}", &buf[0..4])));
 	}
 
 	if buf.len() < 8 {
 		return Err((buf.len() - 1, "Expected major/minor version. Class file too short.".to_string()))
 	}
 
-	println!("Reading major, minor numbers");
-	let major_version = read_u16(buf[4], buf[5]);
-	let minor_version = read_u16(buf[6], buf[7]);
+	//println!("Reading major, minor numbers");
+	let minor_version = read_u16(buf[4], buf[5]);
+	let major_version = read_u16(buf[6], buf[7]);
 
 	if buf.len() < 10 {
 		return Err((buf.len() - 1, "Expected constant pool offset. Class file too short.".to_string()))
 	}
 
-	println!("Reading the constant pool of ");
+	//println!("Reading the constant pool of ");
 	//parse the variable-length constant pool
 	let constant_pool_count = read_u16(buf[8],buf[9]) - 1;
-	println!("Reading the constant pool of count {}", constant_pool_count);
+	//println!("Reading the constant pool of count {}", constant_pool_count);
 	let mut index = 10;
 	let mut constant_pool : Vec<CpInfo> = Vec::new();
 	for i in 0..(constant_pool_count) {
@@ -40,29 +44,29 @@ pub fn read_class_file(source : &mut Read) -> Result<ClassFile, ReadError> {
 	}
 
 	let cpsize = (index) - 10;
-	println!("Size of constant pool: {}", cpsize);
-	println!("Reading the flags and things");
+	//println!("Size of constant pool: {}", cpsize);
+	//println!("Reading the flags and things");
 	let access_flags = read_u16(buf[cpsize + 10], buf[cpsize + 11]);
 	let this_class = read_u16(buf[cpsize + 12], buf[cpsize + 13]);
 	let super_class = read_u16(buf[cpsize + 14], buf[cpsize + 15]);
 
 	let interfaces_size = read_u16(buf[cpsize + 16], buf[cpsize + 17]);
 	let mut interfaces : Vec<u8> = Vec::new();
-	println!("Reading the interfaces at {}", (18 + cpsize));
+	//println!("Reading the interfaces at {}", (18 + cpsize));
 	for i in (18+cpsize)..(18+cpsize+interfaces_size as usize) {
 		interfaces.push(buf[i]);
 	}
-	println!("Read {} interfaces", interfaces_size);
+	//println!("Read {} interfaces", interfaces_size);
 
 
 
-	println!("Reading field count at index {}", 18 + cpsize + interfaces_size as usize);
+	//println!("Reading field count at index {}", 18 + cpsize + interfaces_size as usize);
 	let field_count = read_u16(buf[18 + cpsize + interfaces_size as usize], 
 		buf[19 + cpsize + interfaces_size as usize]);
 
 	index = 20 + cpsize + interfaces_size as usize;
 
-	println!("Reading {} field info entries at index {}", field_count, index);
+	//println!("Reading {} field info entries at index {}", field_count, index);
 	let mut field_info_entries = Vec::new();
 	let old_index = index;
 	for i in 0..field_count {
@@ -75,11 +79,11 @@ pub fn read_class_file(source : &mut Read) -> Result<ClassFile, ReadError> {
 		return Err((index, "Expected number of entries in method table. Class file too short".to_string()));
 	}
 
-	println!("Reading method count at index {}", index);
+	//println!("Reading method count at index {}", index);
 
 	let method_count = read_u16(buf[index], buf[index+1]);
 	index += 2;
-	println!("Reading method {} infos at index {}", method_count, index);
+	//println!("Reading method {} infos at index {}", method_count, index);
 	let mut method_info_entries = Vec::new();
 	for i in 0..method_count {
 		let method_info_entry = try!(read_info_entry(&mut buf, &mut index));
@@ -93,13 +97,16 @@ pub fn read_class_file(source : &mut Read) -> Result<ClassFile, ReadError> {
 	let attribute_count = read_u16(buf[index], buf[index+1]);
 	index += 2;
 
-	println!("Reading {} attirbutes at index {}", attribute_count, index);
+	//println!("Reading {} attirbutes at index {}", attribute_count, index);
 
-	let mut attribute_entries = Vec::new();
+	/*let mut attribute_entries = Vec::new();
 	for i in 0..attribute_count {
 		let attribute_info_entry = try!(read_info_entry(&mut buf, &mut index));
 		method_info_entries.push(attribute_info_entry);
-	}
+	}*/
+
+	let attribute_entries = try!(read_attributes_info(&buf, &mut index, attribute_count as usize));
+
 
 	Ok(ClassFile {
 		minor_version : minor_version,
@@ -138,7 +145,7 @@ pub fn read_constant_pool_entry(source : &mut Vec<u8>, index : &mut usize)
 
 			local_index += 3;
 
-			println!("Trying to read this dang string: {}", local_index);
+			//println!("Trying to read this dang string: {}", local_index);
 
 			let the_string = read_utf_string(source, &mut local_index, str_len as usize);
 			
@@ -166,7 +173,7 @@ pub fn read_constant_pool_entry(source : &mut Vec<u8>, index : &mut usize)
 	};
 
 
-	println!("Source len: {} Byte count: {} Local index: {}", source.len(), additional_byte_count, local_index);
+	//println!("Source len: {} Byte count: {} Local index: {}", source.len(), additional_byte_count, local_index);
 
 	if source.len() <= additional_byte_count + local_index {
 		return Err((local_index, 
@@ -189,8 +196,10 @@ pub fn read_constant_pool_entry(source : &mut Vec<u8>, index : &mut usize)
 fn read_info_entry(source : &mut Vec<u8>, index : &mut usize) 
 	-> Result<Info, ReadError> {
 	let mut local_index = *index;
+	//println!("Begin index at {}", local_index);
 	if local_index + 8 >= source.len() {
-		return Err((local_index, "Not enough bytes for fixed-size field_info items.".to_string()))
+		return Err((local_index, format!("Not enough bytes for fixed-size field_info items at index {}. File is {} bytes.", 
+			local_index, source.len())));
 	}
 
 	let access_flags = read_u16(source[local_index], source[local_index+1]);
@@ -208,7 +217,7 @@ fn read_info_entry(source : &mut Vec<u8>, index : &mut usize)
 		attributes_count as usize));
 
 	*index = local_index;
-
+	//println!("End index at {}", local_index);
 	Ok(Info {
 		access_flags : access_flags,             
 	    name_index : name_index, 
@@ -217,18 +226,18 @@ fn read_info_entry(source : &mut Vec<u8>, index : &mut usize)
 	})
 }
 
-fn read_attributes_info(source : &mut Vec<u8>, index : &mut usize, 
+fn read_attributes_info(source : &Vec<u8>, index : &mut usize, 
 	attributes_count : usize) -> Result<Vec<AttributeInfo>, ReadError> {
 	let mut attributes_info = Vec::new();
 	let mut local_index = *index;
-	
+
 	for i in 0..attributes_count {
 		let attribute_name_index = read_u16(source[local_index], source[local_index + 1]);
 		let attribute_length = read_u32(source[local_index + 2], source[local_index + 3], 
 			source[local_index + 4], source[local_index + 5]);
 
 		local_index = local_index + 6;
-		if (attribute_length as usize + local_index as usize) >= source.len() {
+		if (attribute_length as usize + local_index as usize) > source.len() {
 			return Err((local_index+6, format!("Attribute length at index {} is {}. Not enough bytes for attributes.", local_index, attribute_length)))
 		}
 
@@ -269,12 +278,12 @@ fn read_u32(b1 : u8, b2 : u8, b3 : u8, b4 : u8) -> u32 {
 
 fn read_utf_string(buf : &Vec<u8>, index : &mut usize, length : usize) 
 		-> Result<String, ReadError> {
-	println!("The length of utf 8 string is {}", length);
+	//println!("The length of utf 8 string is {}", length);
 	let mut output_string = String::new();
 	while output_string.len() < length {
 		let code_point = char::from_u32(try!(read_char(buf, index)));
 		output_string.push(code_point.unwrap());
-		println!("Index: {}, Str: {:}", index, output_string);
+		//println!("Index: {}, Str: {:}", index, output_string);
 	}
 
 	Ok(output_string)
@@ -291,12 +300,12 @@ fn read_char(buf : &Vec<u8>, index : &mut usize) -> Result<u32, ReadError> {
 		},
 		(Some(true), Some(true), Some(false), _) => {
 			panic!("Not ready for this");
-			println!("Reading low double");	
+			//println!("Reading low double");	
 			Ok(read_low_double(&bit_vec, index))
 		},
 		(Some(true), Some(true), Some(true), Some(false)) => {
 			panic!("Not ready for this");
-			println!("Warning! Processing of supplementary characters WILL fail.");
+			//println!("Warning! Processing of supplementary characters WILL fail.");
 			Ok(read_high_double(&bit_vec, index))
 		},
 		(None, None, None, None) => Err((*index, format!("Invalid unicode: there are {} bits but index is {}", bit_vec.len(), *index).to_string())),
@@ -312,7 +321,7 @@ fn read_single(bit_vec : &BitVec, index : &mut usize) -> u32 {
 			(toNum(bit_vec[local_index + 4]) << 2) + (toNum(bit_vec[local_index + 5]) << 1) + 
 			(toNum(bit_vec[local_index + 6]))) as u32;
 
-	println!("Readin single {}", x);
+	//println!("Readin single {}", x);
 
 	*index += 1;
 
