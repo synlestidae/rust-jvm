@@ -66,7 +66,7 @@ pub fn read_class_file(source : &mut Read) -> Result<ClassFile, ReadError> {
 
 	index = 20 + cpsize + interfaces_size as usize;
 
-	//println!("Reading {} field info entries at index {}", field_count, index);
+	println!("Reading {} field info entries at index {}", field_count, index);
 	let mut field_info_entries = Vec::new();
 	let old_index = index;
 	for i in 0..field_count {

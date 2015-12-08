@@ -8,8 +8,8 @@ use std::env;
 
 
 #[test]
-fn test_does_not_fail() {
-	let mut cf = File::open("./src/tests/data/homemade/Empty.class").unwrap();
+fn smoke_test() {
+	let mut cf = File::open("./src/tests/data/homemade/OneIntField.class").unwrap();
 	let mut itWorked = false;
 
 	if let Err(_) = read_class_file(&mut cf) {
@@ -70,4 +70,11 @@ fn test_thisclass_index_has_class_tag_1() {
 			as usize - 1];
 
 	assert_eq!(7, super_entry.tag);
+}
+
+#[test]
+fn test_one_field_1() {
+	let classfile = read_class_file(&mut File::open("./src/tests/data/homemade/OneIntField.class")
+			.unwrap()).unwrap();	
+	assert_eq!(1, classfile.field_table.len());
 }
