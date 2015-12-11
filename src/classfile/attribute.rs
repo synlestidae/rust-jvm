@@ -11,7 +11,6 @@ pub enum Attribute {
     	max_locals : u16,
     	code : Vec<u8>,
     	exception_table : Vec<ExceptionTableEntry>,
-    	exception_table[exception_table_length];
     	attributes : Vec<Attribute>
 	},
 	StackMapTable {
@@ -58,7 +57,7 @@ pub enum Attribute {
 	},
 	LocalVariableTypeTable {
 	    attribute_name_index : u16,
-	    local_variable_type_table : Vec<(u16, u16, u16, u16, u16)
+	    local_variable_type_table : Vec<(u16, u16, u16, u16, u16)>
 	},
 	Depecrated {
 		attribute_name_index : u16
@@ -94,7 +93,7 @@ pub enum StackMapFrame {
     SameFrameExtended {offset_delta : u16},
     AppendFrame {
     	offset_delta : u16, 
-    	verification_type_info locals[frame_type - 251];
+    	locals : Vec<VerificationTypeInfo>
     },
     FullFrame {
 	    offset_delta : u16,
@@ -128,22 +127,3 @@ pub enum ElementValue {
 	ClassInfoIndex(u16),
 	AnnotationValue(Annotation)
 }
-    tag : u8,
-    union {
-        u2 ;
-
-        {   u2 type_name_index;
-            u2 const_name_index;
-        } enum_const_value;
-
-        u2 class_info_index;
-
-        annotation annotation_value;
-
-        {   u2            num_values;
-            element_value values[num_values];
-        } array_value;
-    } value;
-}
-
-ElementValue

@@ -1,5 +1,5 @@
 use std::io::Read;
-use classfile::*;
+use classfile::raw::*;
 use std::io::Cursor;
 use byteorder::{BigEndian, ReadBytesExt};
 use bit_vec::BitVec;
@@ -37,7 +37,7 @@ pub fn read_class_file(source : &mut Read) -> Result<RawClassFile, ReadError> {
 	let constant_pool_count = read_u16(buf[8],buf[9]) - 1;
 	//println!("Reading the constant pool of count {}", constant_pool_count);
 	let mut index = 10;
-	let mut constant_pool : Vec<CpInfo> = Vec::new();
+	let mut constant_pool : Vec<RawCpInfo> = Vec::new();
 	for i in 0..(constant_pool_count) {
 		let cp_info_entry = try!(read_constant_pool_entry(&mut buf, &mut index));
 		constant_pool.push(cp_info_entry);
@@ -123,7 +123,7 @@ pub fn read_class_file(source : &mut Read) -> Result<RawClassFile, ReadError> {
 }
 
 pub fn read_constant_pool_entry(source : &mut Vec<u8>, index : &mut usize) 
-		-> Result<CpInfo, ReadError> {
+		-> Result<RawCpInfo, ReadError> {
 	let mut local_index = *index;
 
 	if (local_index >= source.len()) {
@@ -151,7 +151,7 @@ pub fn read_constant_pool_entry(source : &mut Vec<u8>, index : &mut usize)
 			
 			*index = local_index;
 
-			return Ok(CpInfo {
+			return Ok(RawCpInfo {
 				tag : tag,
 				additional_bytes : the_string.unwrap().into_bytes()
 			});
@@ -187,14 +187,14 @@ pub fn read_constant_pool_entry(source : &mut Vec<u8>, index : &mut usize)
 
 	*index = local_index + 1 + additional_byte_count;
 
-	Ok(CpInfo {
+	Ok(RawCpInfo {
 		tag : tag,
 		additional_bytes : additional_bytes
 	})
 }
 
 fn read_info_entry(source : &mut Vec<u8>, index : &mut usize) 
-	-> Result<Info, ReadError> {
+	-> Result<RawInfo, ReadError> {
 	let mut local_index = *index;
 	//println!("Begin index at {}", local_index);
 	if local_index + 8 >= source.len() {
@@ -218,7 +218,7 @@ fn read_info_entry(source : &mut Vec<u8>, index : &mut usize)
 
 	*index = local_index;
 	//println!("End index at {}", local_index);
-	Ok(Info {
+	Ok(RawInfo {
 		access_flags : access_flags,             
 	    name_index : name_index, 
 	    descriptor_index : descriptor_index,
@@ -227,7 +227,7 @@ fn read_info_entry(source : &mut Vec<u8>, index : &mut usize)
 }
 
 fn read_attributes_info(source : &Vec<u8>, index : &mut usize, 
-	attributes_count : usize) -> Result<Vec<AttributeInfo>, ReadError> {
+	attributes_count : usize) -> Result<Vec<RawAttributeInfo>, ReadError> {
 	let mut attributes_info = Vec::new();
 	let mut local_index = *index;
 
@@ -248,7 +248,7 @@ fn read_attributes_info(source : &Vec<u8>, index : &mut usize,
 
 		local_index = local_index + attribute_length as usize;
 
-		attributes_info.push(AttributeInfo {
+		attributes_info.push(RawAttributeInfo {
 			attribute_name_index : attribute_name_index,
 			info : info
 		});
@@ -258,7 +258,7 @@ fn read_attributes_info(source : &Vec<u8>, index : &mut usize,
 }
 
 fn read_method_entry(source : &mut Vec<u8>, index : &mut usize) 
-	-> Result<FieldInfo, ReadError> {
+	-> Result<RawFieldInfo, ReadError> {
 	let local_index = *index;
 	panic!("TODO");
 }
@@ -320,8 +320,6 @@ fn read_single(bit_vec : &BitVec, index : &mut usize) -> u32 {
 			(toNum(bit_vec[local_index + 2]) << 4) + (toNum(bit_vec[local_index + 3]) << 3) + 
 			(toNum(bit_vec[local_index + 4]) << 2) + (toNum(bit_vec[local_index + 5]) << 1) + 
 			(toNum(bit_vec[local_index + 6]))) as u32;
-
-	//println!("Readin single {}", x);
 
 	*index += 1;
 

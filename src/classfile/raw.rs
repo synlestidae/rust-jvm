@@ -3,37 +3,37 @@ pub struct RawClassFile {
 	pub minor_version : u16,
 	pub major_version : u16,
 
-	pub constant_pool_table : Vec<CpInfo>,
+	pub constant_pool_table : Vec<RawCpInfo>,
 	
 	pub access_flags : u16,
 	pub this_class_index : u16,
 	pub super_class_index : u16,
 
 	pub interface_table : Vec<u8>,
-	pub field_table : Vec<FieldInfo>,
-	pub method_table : Vec<MethodInfo>,
-	pub attribute_table : Vec<AttributeInfo>
+	pub field_table : Vec<RawFieldInfo>,
+	pub method_table : Vec<RawMethodInfo>,
+	pub attribute_table : Vec<RawAttributeInfo>
 } 
 
 #[derive(Debug, PartialEq, Clone)]
-pub struct CpInfo {
+pub struct RawCpInfo {
 	pub tag : u8,
 	pub additional_bytes : Vec<u8>
 }
 
-pub type FieldInfo = Info;
-pub type MethodInfo = Info;
+pub type RawFieldInfo = RawInfo;
+pub type RawMethodInfo = RawInfo;
 
 #[derive(Debug, PartialEq)]
-pub struct Info {
+pub struct RawInfo {
 	pub access_flags : u16,             
     pub name_index : u16, 
     pub descriptor_index : u16,
-    pub attributes : Vec<AttributeInfo>
+    pub attributes : Vec<RawAttributeInfo>
 }
 
 #[derive(Debug, PartialEq)]
-pub struct AttributeInfo {
+pub struct RawAttributeInfo {
 	pub attribute_name_index : u16,
 	pub info : Vec<u8>
 }

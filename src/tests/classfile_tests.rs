@@ -1,4 +1,4 @@
-use classfile::*;
+use classfile::raw::*;
 use class_file_reader::*;
 use std::path::Path;
 use std::io;
