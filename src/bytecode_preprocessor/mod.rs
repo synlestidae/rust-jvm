@@ -1,4 +1,4 @@
-use instruction::*;
+use bytecode::instruction::*;
 
 pub fn read_instruction(input : &[u8], index_in : &mut usize) 
 	-> Result<Instruction, ReadError> {

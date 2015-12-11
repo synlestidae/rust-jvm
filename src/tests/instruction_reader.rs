@@ -1,5 +1,5 @@
-use instruction::*;
-use instruction_reader::*;
+use bytecode::instruction::*;
+use bytecode_preprocessor::*;
 
 #[test]
 fn read_instruction_parses_aload() {

@@ -1,5 +1,4 @@
-use classfile::raw::*;
-use class_file_reader::*;
+use classfile_preprocessor::*;
 use std::path::Path;
 use std::io;
 use std::io::prelude::*;
