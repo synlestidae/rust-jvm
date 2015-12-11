@@ -78,3 +78,17 @@ fn test_one_field_1() {
 			.unwrap()).unwrap();	
 	assert_eq!(1, classfile.field_table.len());
 }
+
+#[test]
+fn test_field_has_name_and_correct_type() {
+	let classfile = read_class_file(&mut File::open("./src/tests/data/homemade/OneIntField.class")
+			.unwrap()).unwrap();
+	let field_info = &classfile.field_table[0];
+	let field_const = &classfile.constant_pool_table[field_info.name_index 
+		as usize];
+
+	assert_eq!(1, field_const.tag);
+
+	
+
+}

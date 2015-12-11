@@ -7,7 +7,7 @@ use std::char;
 
 pub type ReadError = (usize, String);
 
-pub fn read_class_file(source : &mut Read) -> Result<ClassFile, ReadError> {
+pub fn read_class_file(source : &mut Read) -> Result<RawClassFile, ReadError> {
 	//println!("Reading into buf");
 	let mut buf = Vec::new();
 	source.read_to_end(&mut buf);
@@ -108,7 +108,7 @@ pub fn read_class_file(source : &mut Read) -> Result<ClassFile, ReadError> {
 	let attribute_entries = try!(read_attributes_info(&buf, &mut index, attribute_count as usize));
 
 
-	Ok(ClassFile {
+	Ok(RawClassFile {
 		minor_version : minor_version,
 		major_version : major_version,
 		constant_pool_table : constant_pool,
