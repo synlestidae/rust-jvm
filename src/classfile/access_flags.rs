@@ -1,4 +1,4 @@
-pub struct Flag {
+pub struct AccessFlags {
 	pub ACC_PUBLIC : bool,
 	pub ACC_PRIVATE : bool,
 	pub ACC_PROTECTED : bool,
@@ -13,9 +13,9 @@ pub struct Flag {
 	pub ACC_SYNTHETIC : bool
 }
 
-impl Flag {
-	pub fn new() -> Flag {
-		Flag {
+impl AccessFlags {
+	pub fn new() -> AccessFlags {
+		AccessFlags {
 			ACC_PUBLIC: false,
 			ACC_PRIVATE: false,
 			ACC_PROTECTED: false,
@@ -31,8 +31,8 @@ impl Flag {
 		}
 	}
 
-	pub fn make_flag(flag_value : u8) -> Flag {
-			let mut flag = Flag::new();
+	pub fn make_flag(flag_value : u8) -> AccessFlags {
+			let mut flag = AccessFlags::new();
 			if (flag_value & 0x0001 != 0) {
 				flag.ACC_PUBLIC = true;
 			}
