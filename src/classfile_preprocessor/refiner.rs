@@ -8,6 +8,7 @@ use classfile::access_flags::AccessFlags;
 use classfile::constant::Constant;
 
 use classfile_preprocessor::refine_constant::refine_constant;
+use classfile_preprocessor::refine_attribute::refine_attribute;
 
 pub type ClassFileProcessingError = String;
 
@@ -26,7 +27,7 @@ fn process_constant_pool_table(table : &Vec<RawCpInfo>) -> Vec<Constant> {
 
 fn process_method_table(constants : &Vec<Constant>, table : &Vec<RawMethodInfo>)
 	-> Vec<MethodInfo> {
-	table.iter().map(refine_method_info).collect()
+	table.iter().map(|ref raw_method_info| refine_method_info(constants, &raw_method_info)).collect()
 }
 
 fn process_field_table(constants : &Vec<Constant>, table : &Vec<RawFieldInfo>) 
@@ -36,18 +37,19 @@ fn process_field_table(constants : &Vec<Constant>, table : &Vec<RawFieldInfo>)
 
 fn process_attributes(constants : &Vec<Constant>, table : &Vec<RawAttributeInfo>) 
 	-> Vec<Attribute> {
-	panic!("Not implemented");
+	table.iter().map(|ref raw_attribute_info| 
+		refine_attribute(constants, raw_attribute_info)).collect()
 }
 
 fn refine_method_info(constants : &Vec<Constant>, raw_method_info : &RawMethodInfo) -> MethodInfo {
-	let name_constant = constants[raw_method_info.name_index as usize];
-	let descriptor_constant = constants[raw_method_info.name_index as usize];
+	let name_constant : &Constant = &constants[raw_method_info.name_index as usize];
+	let descriptor_constant : &Constant = &constants[raw_method_info.name_index as usize];
 
 	match (name_constant, descriptor_constant) {
-		(Constant::Utf8(name), Constant::Utf8(descriptor)) => MethodInfo {
+		(&Constant::Utf8(ref name), &Constant::Utf8(ref descriptor)) => MethodInfo {
 			access_flags : process_access_flags(raw_method_info.access_flags),
-		    name : name,
-		    descriptor : descriptor,
+		    name : name.clone(),
+		    descriptor : descriptor.clone(),
 		    attributes : process_attributes(constants, &raw_method_info.attributes)
 		},
 		_ => panic!("Invalid name and descriptor constants for method")
