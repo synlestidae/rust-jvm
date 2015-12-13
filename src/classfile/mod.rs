@@ -5,3 +5,5 @@ pub mod field_info;
 pub mod constant;
 pub mod classfile;
 pub mod access_flags;
+pub mod class;
+pub mod interface;

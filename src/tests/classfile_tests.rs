@@ -1,4 +1,5 @@
 use classfile_preprocessor::*;
+use classfile::raw::*;
 use std::path::Path;
 use std::io;
 use std::io::prelude::*;
@@ -87,7 +88,34 @@ fn test_field_has_name_and_correct_type() {
 		as usize];
 
 	assert_eq!(1, field_const.tag);
+}
 
+#[test]
+fn test_constructor_method_in_table() {
+	let classfile = read_class_file(&mut File::open("./src/tests/data/homemade/OneVoidMethod.class")
+			.unwrap()).unwrap();
 	
+	let constructor_method_info = &classfile.method_table[0];
 
+	let mut name_index = constructor_method_info.name_index;
+	let constant = classfile.constant_pool_table[name_index 
+		as usize - 1].clone();
+	assert_eq!(1, constant.tag);
+	assert_eq!("<init>".to_string(), 
+		String::from_utf8(constant.additional_bytes).unwrap());
+}
+
+#[test]
+fn test_void_method_in_table() {
+	let classfile = read_class_file(&mut File::open("./src/tests/data/homemade/OneVoidMethod.class")
+			.unwrap()).unwrap();
+	
+	let void_method_info = &classfile.method_table[1];
+	let mut name_index = void_method_info.name_index;
+
+	let constant = classfile.constant_pool_table[name_index 
+		as usize - 1].clone();
+	assert_eq!(1, constant.tag);
+	assert_eq!("voidMethod".to_string(), 
+		String::from_utf8(constant.additional_bytes).unwrap());
 }

@@ -41,8 +41,8 @@ pub enum Constant {
 }
 
 pub struct Ref {
-	class_index : u16,
-	name_and_type_index : u16
+	pub class_index : u16,
+	pub name_and_type_index : u16
 }
 
 pub enum ReferenceKind {

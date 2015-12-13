@@ -31,7 +31,7 @@ impl AccessFlags {
 		}
 	}
 
-	pub fn make_flag(flag_value : u8) -> AccessFlags {
+	pub fn make_flag(flag_value : u16) -> AccessFlags {
 			let mut flag = AccessFlags::new();
 			if (flag_value & 0x0001 != 0) {
 				flag.ACC_PUBLIC = true;

@@ -1,4 +1,4 @@
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct RawClassFile {
 	pub minor_version : u16,
 	pub major_version : u16,
@@ -15,7 +15,7 @@ pub struct RawClassFile {
 	pub attribute_table : Vec<RawAttributeInfo>
 } 
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct RawCpInfo {
 	pub tag : u8,
 	pub additional_bytes : Vec<u8>
@@ -24,7 +24,7 @@ pub struct RawCpInfo {
 pub type RawFieldInfo = RawInfo;
 pub type RawMethodInfo = RawInfo;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct RawInfo {
 	pub access_flags : u16,             
     pub name_index : u16, 
@@ -32,7 +32,7 @@ pub struct RawInfo {
     pub attributes : Vec<RawAttributeInfo>
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct RawAttributeInfo {
 	pub attribute_name_index : u16,
 	pub info : Vec<u8>
