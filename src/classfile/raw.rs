@@ -10,8 +10,8 @@ pub struct RawClassFile {
 	pub super_class_index : u16,
 
 	pub interface_table : Vec<u8>,
-	pub field_table : Vec<RawFieldInfo>,
-	pub method_table : Vec<RawMethodInfo>,
+	pub field_table : Vec<RawInfo>,
+	pub method_table : Vec<RawInfo>,
 	pub attribute_table : Vec<RawAttributeInfo>
 } 
 
@@ -20,9 +20,6 @@ pub struct RawCpInfo {
 	pub tag : u8,
 	pub additional_bytes : Vec<u8>
 }
-
-pub type RawFieldInfo = RawInfo;
-pub type RawMethodInfo = RawInfo;
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct RawInfo {

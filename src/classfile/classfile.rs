@@ -1,5 +1,4 @@
-use classfile::field_info::*;
-use classfile::method_info::*;
+use classfile::info::*;
 use classfile::attribute::*;
 use classfile::constant::*;
 use classfile::access_flags::*;
@@ -15,7 +14,7 @@ pub struct RefinedClassFile {
 	pub super_class_index : u16,
 
 	pub interface_table : Vec<u8>,
-	pub field_table : Vec<FieldInfo>,
-	pub method_table : Vec<MethodInfo>,
+	pub field_table : Vec<Info>,
+	pub method_table : Vec<Info>,
 	pub attribute_table : Vec<Attribute>
 }

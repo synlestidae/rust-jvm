@@ -256,7 +256,7 @@ fn read_attributes_info(source : &Vec<u8>, index : &mut usize,
 }
 
 fn read_method_entry(source : &mut Vec<u8>, index : &mut usize) 
-	-> Result<RawFieldInfo, ReadError> {
+	-> Result<RawInfo, ReadError> {
 	let local_index = *index;
 	panic!("TODO");
 }

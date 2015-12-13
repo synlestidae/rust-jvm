@@ -2,8 +2,7 @@ use classfile_preprocessor::rawprocessor::*;
 use classfile::raw::*;
 use classfile::classfile::RefinedClassFile;
 use classfile::attribute::Attribute;
-use classfile::field_info::FieldInfo;
-use classfile::method_info::MethodInfo;
+use classfile::info::Info;
 use classfile::access_flags::AccessFlags;
 use classfile::constant::Constant;
 
@@ -25,14 +24,14 @@ fn process_constant_pool_table(table : &Vec<RawCpInfo>) -> Vec<Constant> {
 	table.iter().map(refine_constant).collect()
 }
 
-fn process_method_table(constants : &Vec<Constant>, table : &Vec<RawMethodInfo>)
-	-> Vec<MethodInfo> {
-	table.iter().map(|ref raw_method_info| refine_method_info(constants, &raw_method_info)).collect()
+fn process_method_table(constants : &Vec<Constant>, table : &Vec<RawInfo>)
+	-> Vec<Info> {
+	table.iter().map(|ref raw_method_info| refine_info(constants, &raw_method_info)).collect()
 }
 
-fn process_field_table(constants : &Vec<Constant>, table : &Vec<RawFieldInfo>) 
-	-> Vec<FieldInfo> {
-	panic!("Not implemented");	
+fn process_field_table(constants : &Vec<Constant>, table : &Vec<RawInfo>) 
+	-> Vec<Info> {
+	table.iter().map(|ref raw_field_info| refine_info(constants, &raw_field_info)).collect()
 }
 
 fn process_attributes(constants : &Vec<Constant>, table : &Vec<RawAttributeInfo>) 
@@ -41,16 +40,16 @@ fn process_attributes(constants : &Vec<Constant>, table : &Vec<RawAttributeInfo>
 		refine_attribute(constants, raw_attribute_info)).collect()
 }
 
-fn refine_method_info(constants : &Vec<Constant>, raw_method_info : &RawMethodInfo) -> MethodInfo {
-	let name_constant : &Constant = &constants[raw_method_info.name_index as usize];
-	let descriptor_constant : &Constant = &constants[raw_method_info.name_index as usize];
+fn refine_info(constants : &Vec<Constant>, raw_info : &RawInfo) -> Info {
+	let name_constant : &Constant = &constants[raw_info.name_index as usize];
+	let descriptor_constant : &Constant = &constants[raw_info.name_index as usize];
 
 	match (name_constant, descriptor_constant) {
-		(&Constant::Utf8(ref name), &Constant::Utf8(ref descriptor)) => MethodInfo {
-			access_flags : process_access_flags(raw_method_info.access_flags),
+		(&Constant::Utf8(ref name), &Constant::Utf8(ref descriptor)) => Info {
+			access_flags : process_access_flags(raw_info.access_flags),
 		    name : name.clone(),
 		    descriptor : descriptor.clone(),
-		    attributes : process_attributes(constants, &raw_method_info.attributes)
+		    attributes : process_attributes(constants, &raw_info.attributes)
 		},
 		_ => panic!("Invalid name and descriptor constants for method")
 	}
