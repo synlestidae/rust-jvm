@@ -5,5 +5,6 @@ mod classfile_preprocessor;
 mod tests;  
 mod vm;
 mod util;
+
 extern crate byteorder;
 extern crate bit_vec;
