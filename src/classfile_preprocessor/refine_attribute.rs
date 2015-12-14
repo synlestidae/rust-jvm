@@ -62,7 +62,10 @@ pub fn refine_attribute(constants : &Vec<Constant>, raw_attribute : &RawAttribut
 			}
 		},
 		"StackMapTable" => {
-			panic!("Not implemented");
+			let number_of_entries = read_u16(bytes[5],bytes[6]);
+			Attribute::StackMapTable {
+				entries : read_stackmaptable_entries(constants, &mut 6, &bytes)
+			}
 		},
 		"Exceptions" => {
 			panic!("Not implemented");
@@ -92,6 +95,70 @@ pub fn refine_attribute(constants : &Vec<Constant>, raw_attribute : &RawAttribut
 		"AnnotationDefault" => {panic!("Not implemented");},
 		"BootstrapMethods" => {panic!("Not implemented");},
 		_ => panic!("Unknown or unsupported attribute name: {}", name)
+	}
+
+}
+
+fn read_stackmaptable_entries(constants : &Vec<Constant>, index : &mut usize, bytes : &Vec<u8>) 
+	-> Vec<StackMapFrame> {
+	let mut entries = Vec::new();
+	while *index < bytes.len() {
+		entries.push(read_stackmaptable_entry(constants, index, bytes));
+	}
+	entries
+}
+
+fn read_stackmaptable_entry(constants : &Vec<Constant>, index : &mut usize, bytes : &Vec<u8>) 
+	-> StackMapFrame {
+	let frame_type = bytes[0];
+	*index += 1;
+
+	if (0 <= frame_type && frame_type <= 63) {
+		return StackMapFrame::SameFrame
+	}
+	else if (64 <= frame_type && frame_type <= 127) {
+		return StackMapFrame::SameLocals1StackItemFrame {
+			stack : read_verification_type_info(constants, index, 1, bytes)}
+	}
+	else if (frame_type == 247) {
+		let offset_delta = read_u16(bytes[*index], bytes[*index + 1]);
+		*index += 2;
+		return StackMapFrame::SameLocals1StackItemFrameExtended { 
+			offset_delta : offset_delta,
+			stack : read_verification_type_info(constants, index, 1, bytes)
+		}
+	}
+
+	panic!("Not implemented");
+}
+
+fn read_verification_type_info(constants : &Vec<Constant>, index : &mut usize, count : u16, bytes : &Vec<u8>) 
+	-> VerificationTypeInfo {
+	*index += 1;
+	match bytes[*index - 1] {
+		0 => VerificationTypeInfo::TopVariable,
+		1 => VerificationTypeInfo::IntegerVariable,
+		2 => VerificationTypeInfo::FloatVariable,
+		3 => VerificationTypeInfo::DoubleVariable,
+		4 => VerificationTypeInfo::LongVariable,
+		5 => VerificationTypeInfo::DoubleVariable,
+		6 => VerificationTypeInfo::UninitializedThisVariable,
+		7 => {
+			let cpool_index = read_u16(bytes[*index], bytes[*index + 1]) 
+				as usize;
+			VerificationTypeInfo::ObjectVariable {
+				cpool_object : constants[cpool_index].clone()
+			}
+		},
+		8 => {
+			let offset = read_u16(bytes[*index], bytes[*index + 1]);
+			*index += 2;
+			VerificationTypeInfo::UninitializedVariable {
+				offset : offset
+			}
+		},
+		invalid_tag => panic!("Invalid verification type info tag {} at {}", 
+			invalid_tag, (*index - 1))
 	}
 
 }

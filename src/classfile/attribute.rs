@@ -68,8 +68,13 @@ pub enum Attribute {
 
 pub enum StackMapFrame {
     SameFrame,
-    SameLocals1StackItemFrame {stack : VerificationTypeInfo},
-    SameLocals1StackItemFrameExtended {stack : VerificationTypeInfo},
+    SameLocals1StackItemFrame {
+    	stack : VerificationTypeInfo
+    },
+    SameLocals1StackItemFrameExtended {
+		offset_delta : u16,
+    	stack : VerificationTypeInfo
+    },
     ChopFrame {offset_delta : u16},
     SameFrameExtended {offset_delta : u16},
     AppendFrame {

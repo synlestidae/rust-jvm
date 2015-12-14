@@ -214,7 +214,7 @@ pub fn read_info_entry(source : &mut Vec<u8>, index : &mut usize)
 		attributes_count as usize));
 
 	*index = local_index;
-	//println!("End index at {}", local_index);
+	
 	Ok(RawInfo {
 		access_flags : access_flags,             
 	    name_index : name_index, 
