@@ -68,7 +68,16 @@ pub fn refine_attribute(constants : &Vec<Constant>, raw_attribute : &RawAttribut
 			}
 		},
 		"Exceptions" => {
-			panic!("Not implemented");
+			let number_of_exceptions = read_u16(bytes[4,5]);
+			let mut i = 0;
+			let mut exceptions_index_table = Vec::new();
+			while i < number_of_exceptions {
+				exceptions_index_table.push(read_u16(bytes[i], bytes[i+1]));
+				i += 2;
+			}
+			Attribute::Exceptions {
+				exceptions_index_table : exceptions_index_table
+			}
 		}
 		"InnerClasses" => {
 			panic!("Not implemented");
@@ -100,7 +109,7 @@ pub fn refine_attribute(constants : &Vec<Constant>, raw_attribute : &RawAttribut
 }
 
 fn read_stackmaptable_entries(constants : &Vec<Constant>, index : &mut usize, bytes : &Vec<u8>) 
-	-> Vec<StackMapFrame> {
+	-> Vec<StackMapFrame> {	
 	let mut entries = Vec::new();
 	while *index < bytes.len() {
 		entries.push(read_stackmaptable_entry(constants, index, bytes));

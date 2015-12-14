@@ -14,6 +14,9 @@ pub enum Attribute {
     	exception_table : Vec<ExceptionTableEntry>,
     	attributes : Vec<Attribute>
 	},
+	Exceptions {
+		exception_index_table : Vec<u16>
+	},
 	StackMapTable {
 		entries : Vec<StackMapFrame>
 	},
