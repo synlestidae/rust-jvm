@@ -17,16 +17,19 @@ pub enum Attribute {
 	StackMapTable {
 		entries : Vec<StackMapFrame>
 	},
-	InnerClasses_attribute {
+	InnerClasses {
     	classes : Vec<(u16, u16, u16, u16)>
 	},
-	EnclosingMethod {    	class : Constant,
+	EnclosingMethod {    	
+		class : Constant,
     	method : Constant
 	},
 	Synthetic,
-	Signature {	    signature : String
+	Signature {	    
+		signature : String
 	},
-	SourceFile {	    sourcefile : String
+	SourceFile {	    
+		sourcefile : String
 	},
 	SourceDebugExtension {
 	    debug_extension : Vec<u8>
@@ -50,12 +53,15 @@ pub enum Attribute {
 	    annotations : Vec<Annotation>
 	},
 	RuntimeVisibleParameterAnnotations {
-    	parameter_annotations : Vec<(u16, Vec<Annotation>)>,
+    	parameter_annotations : Vec<Vec<Annotation>>,
 	},
-	AnnotationDefault_attribute {
+	RuntimeInvisibleParameterAnnotations {
+    	parameter_annotations : Vec<Vec<Annotation>>,
+	},
+	AnnotationDefault {
     	default_value : ElementValue
 	},
-	BootstrapMethods_attribute {
+	BootstrapMethods {
 	    bootstrap_methods : Vec<(u16, u16, Vec<u16>)>
 	}
 }

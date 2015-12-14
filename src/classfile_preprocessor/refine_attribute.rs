@@ -61,6 +61,36 @@ pub fn refine_attribute(constants : &Vec<Constant>, raw_attribute : &RawAttribut
     			attributes : attributes
 			}
 		},
+		"StackMapTable" => {
+			panic!("Not implemented");
+		},
+		"Exceptions" => {
+			panic!("Not implemented");
+		}
+		"InnerClasses" => {
+			panic!("Not implemented");
+		},
+		"EnclosingMethod" => {
+			panic!("Not implemented");
+		},
+		"Synthetic" => {
+			panic!("Not implemented");
+		},
+		"Signature" => {
+			panic!("Not implemented");
+		},
+		"SourceFile" => {panic!("Not implemented");},
+		"SourceDebugExtension" => {panic!("Not implemented");},
+		"LineNumberTable" => {panic!("Not implemented");},
+		"LocalVariableTable" => {panic!("Not implemented");},
+		"LocalVariableTypeTable" => {panic!("Not implemented");},
+		"Deprecated" => {panic!("Not implemented");},
+		"RuntimeVisibleAnnotations" => {panic!("Not implemented");},
+		"RuntimeInvisibleAnnotations" => {panic!("Not implemented");},
+		"RuntimeVisibleParameterAnnotations" => {panic!("Not implemented");},
+		"RuntimeInvisibleParameterAnnotations" => {panic!("Not implemented");},
+		"AnnotationDefault" => {panic!("Not implemented");},
+		"BootstrapMethods" => {panic!("Not implemented");},
 		_ => panic!("Unknown or unsupported attribute name: {}", name)
 	}
 
