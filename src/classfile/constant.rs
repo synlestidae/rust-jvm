@@ -1,3 +1,4 @@
+#[derive(PartialEq, Eq, Debug, Clone)]
 pub enum Constant {
 	Class {
 		name_index : u16
@@ -40,11 +41,13 @@ pub enum Constant {
 	}
 }
 
+#[derive(PartialEq, Eq, Copy, Clone, Debug)]
 pub struct Ref {
 	pub class_index : u16,
 	pub name_and_type_index : u16
 }
 
+#[derive(PartialEq, Eq, Copy, Clone, Debug)]
 pub enum ReferenceKind {
 	GetField,
 	GetStatic,
