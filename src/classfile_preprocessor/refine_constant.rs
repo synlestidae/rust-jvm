@@ -5,6 +5,8 @@ use util::*;
 pub fn refine_constant(raw_constant : &RawCpInfo) -> Constant {
 	let bytes = &raw_constant.additional_bytes;
 
+	println!("Refining: {:?}", raw_constant);
+
 	match raw_constant.tag {
 		7 => Constant::Class {name_index : 
 			read_u16(bytes[0], 

@@ -178,7 +178,7 @@ pub fn read_constant_pool_entry(source : &mut Vec<u8>, index : &mut usize)
 	}
 
 	let mut additional_bytes = Vec::new();
-	for i in (local_index+1)..(local_index+additional_byte_count) {
+	for i in (local_index+1)..(local_index + 1 + additional_byte_count) {
 		additional_bytes.push(source[i]);
 	}
 

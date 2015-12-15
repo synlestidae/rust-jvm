@@ -3,6 +3,7 @@ use classfile::attribute::*;
 use classfile::constant::*;
 use classfile::access_flags::*;
 
+#[derive(Debug, Clone)]
 pub struct RefinedClassFile {
 	pub minor_version : u16,
 	pub major_version : u16,

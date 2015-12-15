@@ -3,6 +3,7 @@ use classfile::constant::Constant;
 pub type ExceptionTableEntry = (u16, u16, u16, Constant);
 pub type InnerClass = (u16,u16,u16,u16);
 
+#[derive(Debug, Clone)]
 pub enum Attribute {
 	ConstantValue {
 		constant_value : Constant
@@ -67,6 +68,7 @@ pub enum Attribute {
 	}
 }
 
+#[derive(Debug, Clone)]
 pub enum StackMapFrame {
     SameFrame,
     SameLocals1StackItemFrame {
@@ -90,6 +92,7 @@ pub enum StackMapFrame {
 	}
 }
 
+#[derive(Debug, Clone)]
 pub enum VerificationTypeInfo {
 	TopVariable,
     IntegerVariable,
@@ -102,11 +105,13 @@ pub enum VerificationTypeInfo {
     UninitializedVariable {offset : u16},
 } 
 
+#[derive(Debug, Clone)]
 pub struct Annotation {
     pub annotation_type : String,
     pub element_value_pairs : Vec<(String, ElementValue)>
 }
 
+#[derive(Debug, Clone)]
 pub enum ElementValue {
 	ConstValueIndex(u16),
 	EnumConstValue(u16, u16, u16),

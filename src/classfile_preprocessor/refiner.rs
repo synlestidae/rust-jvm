@@ -16,14 +16,16 @@ pub fn refine_classfile(raw_classfile : &RawClassFile) -> Result<RefinedClassFil
 	let constants = process_constant_pool_table(&raw_classfile.constant_pool_table); 
 	let super_name : String; let this_name : String;
 
-	//and the nominee for the world's ugliest condition in an If statement goes to...
-	if let (&Constant::Class {name_index : super_class_name_index}, 
-		&Constant::Class {name_index : this_class_name_index}) = 
-		(&constants[raw_classfile.this_class_index as usize],  
-			&constants[raw_classfile.super_class_index as usize]) {
+	let pattern_to_match = (&constants[raw_classfile.this_class_index as usize - 1],  
+		 &constants[raw_classfile.super_class_index as usize - 1]);
 
-		match (&constants[this_class_name_index as usize], 
-			&constants[super_class_name_index as usize]) {
+	if let 
+		(&Constant::Class {name_index : super_class_name_index}, 
+		 &Constant::Class {name_index : this_class_name_index}) 
+		= pattern_to_match {
+
+		match (&constants[this_class_name_index as usize - 1], 
+			&constants[super_class_name_index as usize - 1]) {
 			(&Constant::Utf8(ref this), &Constant::Utf8(ref super_)) => {
 				this_name = this.clone();
 				super_name = super_.clone();
@@ -31,7 +33,8 @@ pub fn refine_classfile(raw_classfile : &RawClassFile) -> Result<RefinedClassFil
 			_ => return Err("This or super class name did not resolve to Utf-8 string".to_string())
 		}
 	}else{
-		return Err("This or super class constant was not CONSTANT_Class_info".to_string())
+		return Err(format!("This or super class constant was not CONSTANT_Class_info: {:?}", 
+			pattern_to_match));
 	}
 
 	let result = RefinedClassFile {

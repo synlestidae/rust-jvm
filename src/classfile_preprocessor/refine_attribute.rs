@@ -10,7 +10,7 @@ pub fn refine_attribute(constants : &Vec<Constant>, raw_attribute : &RawAttribut
 
 	let name : &str;
 
-	if let Constant::Utf8(ref const_name) = constants[name_index as usize] {
+	if let Constant::Utf8(ref const_name) = constants[name_index as usize - 1] {
 		name = const_name;
 	}
 	else {
@@ -19,7 +19,7 @@ pub fn refine_attribute(constants : &Vec<Constant>, raw_attribute : &RawAttribut
 
 	match name {
 		"ConstantValue" => Attribute::ConstantValue {
-			constant_value : constants[read_u16(bytes[0], bytes[1]) as usize].clone()
+			constant_value : constants[read_u16(bytes[0], bytes[1]) as usize - 1].clone()
 		},
 		"Code" => {
 			let max_stack = read_u16(bytes[0], bytes[1]);
@@ -34,17 +34,18 @@ pub fn refine_attribute(constants : &Vec<Constant>, raw_attribute : &RawAttribut
 			let mut exception_table : Vec<ExceptionTableEntry> = Vec::new();
 			let exception_table_length = read_u16(bytes[code_length + 8], 
 				bytes[code_length + 9]) as usize;
-			let mut j = 10 + code_length;
-			while j < 10 + code_length + exception_table_length {
-				let i = j as usize;
+
+			for j in 0..exception_table_length {
+				let i = 10 + code_length as usize + j*8 ;
 				let start_pc = read_u16(bytes[i], bytes[i + 1]);
         		let end_pc = read_u16(bytes[i + 2], bytes[i + 3]);
         		let handler_pc = read_u16(bytes[i + 4], bytes[i + 5]);
         		let catch_type = read_u16(bytes[i + 6], bytes[i + 7]);
-        		j = j + 8;
 			}
 
+			let mut j = 10 + code_length + exception_table_length;
 			let attributes_count = read_u16(bytes[j as usize], bytes[j as usize + 1]);
+			j += 2;
 			let attributes = read_attributes_info(bytes, &mut (j as usize), attributes_count as usize)
 				.unwrap()
 				.iter()
@@ -96,8 +97,8 @@ pub fn refine_attribute(constants : &Vec<Constant>, raw_attribute : &RawAttribut
 		"EnclosingMethod" => {
 			let class_index = read_u16(bytes[0], bytes[1]) as usize;
 			let method_index = read_u16(bytes[6], bytes[7]) as usize;
-			let class = &constants[class_index];
-			let method = &constants[method_index];
+			let class = &constants[class_index - 1];
+			let method = &constants[method_index - 1];
 
 			Attribute::EnclosingMethod {
 				class : class.clone(),
@@ -109,7 +110,7 @@ pub fn refine_attribute(constants : &Vec<Constant>, raw_attribute : &RawAttribut
 		},
 		"Signature" => {
 			let signature_index = read_u16(bytes[0], bytes[1]);
-			match &constants[signature_index as usize] {
+			match &constants[signature_index as usize - 1] {
 				&Constant::Utf8(ref sig_string) => Attribute::Signature {
 					signature : sig_string.clone()
 				},
@@ -119,7 +120,7 @@ pub fn refine_attribute(constants : &Vec<Constant>, raw_attribute : &RawAttribut
 		},
 		"SourceFile" => {
 			let sourcefile_index = read_u16(bytes[0], bytes[1]);
-			match &constants[sourcefile_index as usize] {
+			match &constants[sourcefile_index as usize - 1] {
 				&Constant::Utf8(ref source_string) => Attribute::SourceFile {
 					sourcefile : source_string.clone()
 				},
@@ -245,7 +246,7 @@ fn read_verification_type_info(constants : &Vec<Constant>, index : &mut usize, c
 			let cpool_index = read_u16(bytes[*index], bytes[*index + 1]) 
 				as usize;
 			VerificationTypeInfo::ObjectVariable {
-				cpool_object : constants[cpool_index].clone()
+				cpool_object : constants[cpool_index - 1].clone()
 			}
 		},
 		8 => {
