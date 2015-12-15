@@ -20,8 +20,8 @@ pub fn refine_classfile(raw_classfile : &RawClassFile) -> Result<RefinedClassFil
 		 &constants[raw_classfile.super_class_index as usize - 1]);
 
 	if let 
-		(&Constant::Class {name_index : super_class_name_index}, 
-		 &Constant::Class {name_index : this_class_name_index}) 
+		(&Constant::Class {name_index : this_class_name_index}, 
+		 &Constant::Class {name_index : super_class_name_index}) 
 		= pattern_to_match {
 
 		match (&constants[this_class_name_index as usize - 1], 

@@ -23,3 +23,19 @@ fn smoke_test() {
 		assert!(false);
 	}
 }
+
+#[test]
+fn smoke_test_2() {
+	let mut cf = File::open("./src/tests/data/homemade/OneVoidMethod.class").unwrap();
+	let mut itWorked = false;
+
+	if let Ok(raw_file) = read_class_file(&mut cf) {
+		match refine_classfile(&raw_file) {
+			Ok(cf) => println!("Holy shit it worked: {:?}", cf),
+			Err(err) => println!("Yeah of course it didn't work: {}", err)
+		}
+	}
+	else{
+		assert!(false);
+	}
+}

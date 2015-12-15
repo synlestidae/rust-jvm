@@ -139,8 +139,9 @@ pub fn refine_attribute(constants : &Vec<Constant>, raw_attribute : &RawAttribut
 
 			while i < length_of_table {
 				let start_pc = read_u16(bytes[i], bytes[i + 1]);
-				let line_number = read_u16(bytes[i+ 2], bytes[i + 3]);
+				let line_number = read_u16(bytes[i + 2], bytes[i + 3]);
 				line_number_info.push((start_pc, line_number));
+				i += 4;
 			}
 
 			Attribute::LineNumberTable {
