@@ -13,7 +13,46 @@ pub type ClassFileProcessingError = String;
 
 pub fn refine_classfile(raw_classfile : &RawClassFile) -> Result<RefinedClassFile, 
 		ClassFileProcessingError> {
-	panic!("Not implemented");
+	let constants = process_constant_pool_table(&raw_classfile.constant_pool_table); 
+	let super_name : String; let this_name : String;
+
+	//and the nominee for the world's ugliest condition in an If statement goes to...
+	if let (&Constant::Class {name_index : super_class_name_index}, 
+		&Constant::Class {name_index : this_class_name_index}) = 
+		(&constants[raw_classfile.this_class_index as usize],  
+			&constants[raw_classfile.super_class_index as usize]) {
+
+		match (&constants[this_class_name_index as usize], 
+			&constants[super_class_name_index as usize]) {
+			(&Constant::Utf8(ref this), &Constant::Utf8(ref super_)) => {
+				this_name = this.clone();
+				super_name = super_.clone();
+			},
+			_ => return Err("This or super class name did not resolve to Utf-8 string".to_string())
+		}
+	}else{
+		return Err("This or super class constant was not CONSTANT_Class_info".to_string())
+	}
+
+	let result = RefinedClassFile {
+		major_version : raw_classfile.major_version,
+		minor_version : raw_classfile.minor_version,
+		constant_pool_table : constants.clone(),
+
+		access_flags : process_access_flags(raw_classfile.access_flags),
+		this_class : this_name,
+		super_class : super_name,
+
+		interface_table : raw_classfile.interface_table.clone(),
+		field_table : process_field_table(&constants, 
+			&raw_classfile.field_table),
+		method_table : process_method_table(&constants, 
+			&raw_classfile.method_table),
+		attribute_table : process_attributes(&constants, 
+			&raw_classfile.attribute_table),
+	};
+
+	Ok(result)
 }
 
 pub fn process_access_flags(raw_flags : u16) -> AccessFlags {

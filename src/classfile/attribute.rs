@@ -46,9 +46,7 @@ pub enum Attribute {
 	LocalVariableTypeTable {
 	    local_variable_type_table : Vec<(u16, u16, u16, u16, u16)>
 	},
-	Depecrated {
-		attribute_name : String
-	},
+	Deprecated,
 	RuntimeVisibleAnnotations {
 	    annotations : Vec<Annotation>
 	},

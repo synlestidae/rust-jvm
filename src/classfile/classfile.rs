@@ -10,8 +10,8 @@ pub struct RefinedClassFile {
 	pub constant_pool_table : Vec<Constant>,
 	
 	pub access_flags : AccessFlags,
-	pub this_class_index : u16,
-	pub super_class_index : u16,
+	pub this_class : String,	
+	pub super_class : String,
 
 	pub interface_table : Vec<u8>,
 	pub field_table : Vec<Info>,

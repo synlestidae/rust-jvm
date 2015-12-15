@@ -19,23 +19,23 @@ pub fn refine_attribute(constants : &Vec<Constant>, raw_attribute : &RawAttribut
 
 	match name {
 		"ConstantValue" => Attribute::ConstantValue {
-			constant_value : constants[read_u16(bytes[4], bytes[5]) as usize].clone()
+			constant_value : constants[read_u16(bytes[0], bytes[1]) as usize].clone()
 		},
 		"Code" => {
-			let max_stack = read_u16(bytes[4], bytes[5]);
-			let max_locals = read_u16(bytes[6], bytes[7]);
-			let code_length = read_u32(bytes[8], bytes[9], bytes[10], bytes[11]);
+			let max_stack = read_u16(bytes[0], bytes[1]);
+			let max_locals = read_u16(bytes[2], bytes[3]);
+			let code_length = read_u32(bytes[4], bytes[5], bytes[6], bytes[7]) as usize;
 
 			let mut code = Vec::new();
-			for i in 12..code_length as usize {
-				code.push(bytes[i]);
+			for i in 0..code_length as usize {
+				code.push(bytes[i + 8]);
 			}
 
 			let mut exception_table : Vec<ExceptionTableEntry> = Vec::new();
-			let exception_table_length = read_u16(bytes[12], bytes[13]);
-
-			let mut j = 12 + code_length;
-			while j < 12 + code_length + exception_table_length as u32 {
+			let exception_table_length = read_u16(bytes[code_length + 8], 
+				bytes[code_length + 9]) as usize;
+			let mut j = 10 + code_length;
+			while j < 10 + code_length + exception_table_length {
 				let i = j as usize;
 				let start_pc = read_u16(bytes[i], bytes[i + 1]);
         		let end_pc = read_u16(bytes[i + 2], bytes[i + 3]);
@@ -44,9 +44,7 @@ pub fn refine_attribute(constants : &Vec<Constant>, raw_attribute : &RawAttribut
         		j = j + 8;
 			}
 
-
 			let attributes_count = read_u16(bytes[j as usize], bytes[j as usize + 1]);
-
 			let attributes = read_attributes_info(bytes, &mut (j as usize), attributes_count as usize)
 				.unwrap()
 				.iter()
@@ -62,13 +60,13 @@ pub fn refine_attribute(constants : &Vec<Constant>, raw_attribute : &RawAttribut
 			}
 		},
 		"StackMapTable" => {
-			let number_of_entries = read_u16(bytes[5],bytes[6]);
+			let number_of_entries = read_u16(bytes[0],bytes[1]);
 			Attribute::StackMapTable {
-				entries : read_stackmaptable_entries(constants, &mut 6, &bytes)
+				entries : read_stackmaptable_entries(constants, &mut 2, &bytes)
 			}
 		},
 		"Exceptions" => {
-			let number_of_exceptions = read_u16(bytes[4],bytes[5]);
+			let number_of_exceptions = read_u16(bytes[0],bytes[1]);
 			let mut i = 0;
 			let mut exceptions_index_table = Vec::new();
 			while i < number_of_exceptions as usize {
@@ -80,7 +78,7 @@ pub fn refine_attribute(constants : &Vec<Constant>, raw_attribute : &RawAttribut
 			}
 		}
 		"InnerClasses" => {
-			let number_of_classes = read_u16(bytes[4], bytes[5]);
+			let number_of_classes = read_u16(bytes[0], bytes[1]);
 			let mut classes = Vec::new();
 			for i in 0..number_of_classes {
 				let j = (6 + i*8) as usize;
@@ -96,20 +94,99 @@ pub fn refine_attribute(constants : &Vec<Constant>, raw_attribute : &RawAttribut
 			}
 		},
 		"EnclosingMethod" => {
-			panic!("Not implemented");
+			let class_index = read_u16(bytes[0], bytes[1]) as usize;
+			let method_index = read_u16(bytes[6], bytes[7]) as usize;
+			let class = &constants[class_index];
+			let method = &constants[method_index];
+
+			Attribute::EnclosingMethod {
+				class : class.clone(),
+				method : method.clone()
+			}
 		},
 		"Synthetic" => {
-			panic!("Not implemented");
+			Attribute::Synthetic
 		},
 		"Signature" => {
-			panic!("Not implemented");
+			let signature_index = read_u16(bytes[0], bytes[1]);
+			match &constants[signature_index as usize] {
+				&Constant::Utf8(ref sig_string) => Attribute::Signature {
+					signature : sig_string.clone()
+				},
+				invalidConst => panic!("Unknown signature type: {:?}", 
+					invalidConst)
+			}
 		},
-		"SourceFile" => {panic!("Not implemented");},
-		"SourceDebugExtension" => {panic!("Not implemented");},
-		"LineNumberTable" => {panic!("Not implemented");},
-		"LocalVariableTable" => {panic!("Not implemented");},
-		"LocalVariableTypeTable" => {panic!("Not implemented");},
-		"Deprecated" => {panic!("Not implemented");},
+		"SourceFile" => {
+			let sourcefile_index = read_u16(bytes[0], bytes[1]);
+			match &constants[sourcefile_index as usize] {
+				&Constant::Utf8(ref source_string) => Attribute::SourceFile {
+					sourcefile : source_string.clone()
+				},
+				invalidConst => panic!("Unknown sourcefile type: {:?}", invalidConst)
+			}
+		},
+		"SourceDebugExtension" => {
+			Attribute::SourceDebugExtension {
+				debug_extension : bytes.clone()
+			} 
+		},
+		"LineNumberTable" => {
+			let length_of_table = read_u16(bytes[0], bytes[1]) as usize;
+			let mut i = 2;
+			let mut line_number_info = Vec::new();
+
+			while i < length_of_table {
+				let start_pc = read_u16(bytes[i], bytes[i + 1]);
+				let line_number = read_u16(bytes[i+ 2], bytes[i + 3]);
+				line_number_info.push((start_pc, line_number));
+			}
+
+			Attribute::LineNumberTable {
+				line_number_table : line_number_info
+			}
+		},
+		"LocalVariableTable" => {
+			let length_of_table = read_u16(bytes[0], bytes[1]) as usize;
+
+			let mut i = 2;
+			let mut local_variable_table = Vec::new();
+
+			while i < length_of_table {
+				let start_pc = read_u16(bytes[i], bytes[i + 1]);
+				let length = read_u16(bytes[i + 2], bytes[i + 3]);
+				let name_index = read_u16(bytes[i + 4], bytes[i + 5]);
+				let descriptor_index = read_u16(bytes[i+ 6], bytes[i + 7]);
+				let index = read_u16(bytes[i + 8], bytes[i + 9]);
+				local_variable_table.push((start_pc, length, name_index, 
+					descriptor_index, index));
+			}
+
+			Attribute::LocalVariableTable {
+				local_variable_table : local_variable_table
+			}
+		},
+		"LocalVariableTypeTable" => {
+			let length_of_table = read_u16(bytes[0], bytes[1]) as usize;
+
+			let mut i = 2;
+			let mut local_variable_type_table = Vec::new();
+
+			while i < length_of_table {
+				let start_pc = read_u16(bytes[i], bytes[i + 1]);
+				let length = read_u16(bytes[i + 2], bytes[i + 3]);
+				let name_index = read_u16(bytes[i + 4], bytes[i + 5]);
+				let signature_index = read_u16(bytes[i+ 6], bytes[i + 7]);
+				let index = read_u16(bytes[i + 8], bytes[i + 9]);
+				local_variable_type_table.push((start_pc, length, name_index, 
+					signature_index, index));
+			}
+
+			Attribute::LocalVariableTypeTable {
+				local_variable_type_table : local_variable_type_table
+			}
+		},
+		"Deprecated" => { Attribute::Deprecated },
 		"RuntimeVisibleAnnotations" => {panic!("Not implemented");},
 		"RuntimeInvisibleAnnotations" => {panic!("Not implemented");},
 		"RuntimeVisibleParameterAnnotations" => {panic!("Not implemented");},
@@ -118,7 +195,6 @@ pub fn refine_attribute(constants : &Vec<Constant>, raw_attribute : &RawAttribut
 		"BootstrapMethods" => {panic!("Not implemented");},
 		_ => panic!("Unknown or unsupported attribute name: {}", name)
 	}
-
 }
 
 fn read_stackmaptable_entries(constants : &Vec<Constant>, index : &mut usize, bytes : &Vec<u8>) 
