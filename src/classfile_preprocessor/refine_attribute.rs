@@ -68,19 +68,32 @@ pub fn refine_attribute(constants : &Vec<Constant>, raw_attribute : &RawAttribut
 			}
 		},
 		"Exceptions" => {
-			let number_of_exceptions = read_u16(bytes[4,5]);
+			let number_of_exceptions = read_u16(bytes[4],bytes[5]);
 			let mut i = 0;
 			let mut exceptions_index_table = Vec::new();
-			while i < number_of_exceptions {
+			while i < number_of_exceptions as usize {
 				exceptions_index_table.push(read_u16(bytes[i], bytes[i+1]));
 				i += 2;
 			}
 			Attribute::Exceptions {
-				exceptions_index_table : exceptions_index_table
+				exception_index_table : exceptions_index_table
 			}
 		}
 		"InnerClasses" => {
-			panic!("Not implemented");
+			let number_of_classes = read_u16(bytes[4], bytes[5]);
+			let mut classes = Vec::new();
+			for i in 0..number_of_classes {
+				let j = (6 + i*8) as usize;
+				let inner_class_info_index = read_u16(bytes[j], bytes[j+1]);
+        		let outer_class_info_index = read_u16(bytes[j+2], bytes[j+3]);
+        		let inner_name_index = read_u16(bytes[j+4], bytes[j+5]);
+        		let inner_class_access_flags = read_u16(bytes[j+6], bytes[j+7]);;
+        		classes.push((inner_class_info_index, outer_class_info_index, 
+        			inner_name_index, inner_class_access_flags));
+			}
+			Attribute::InnerClasses {
+				classes : classes
+			}
 		},
 		"EnclosingMethod" => {
 			panic!("Not implemented");
