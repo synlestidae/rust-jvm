@@ -5,7 +5,7 @@ pub struct AccessFlags {
 	pub ACC_PROTECTED : bool,
 	pub ACC_STATIC : bool,
 	pub ACC_FINAL : bool,
-	pub ACC_SYNCHRONIZED : bool,
+	pub ACC_SUPER : bool,
 	pub ACC_BRIDGE : bool,
 	pub ACC_VARARGS : bool,
 	pub ACC_NATIVE : bool,
@@ -22,7 +22,7 @@ impl AccessFlags {
 			ACC_PROTECTED: false,
 			ACC_STATIC: false,
 			ACC_FINAL: false,
-			ACC_SYNCHRONIZED: false,
+			ACC_SUPER: false,
 			ACC_BRIDGE: false,
 			ACC_VARARGS: false,
 			ACC_NATIVE: false,
@@ -53,7 +53,7 @@ impl AccessFlags {
 				flag.ACC_FINAL = true;
 			}
 			if (flag_value & 0x0020 != 0) {
-				flag.ACC_SYNCHRONIZED = true;
+				flag.ACC_SUPER = true;
 			}
 			if (flag_value & 0x0040 != 0) {
 				flag.ACC_BRIDGE = true;
