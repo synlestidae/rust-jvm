@@ -1,4 +1,4 @@
-use instruction::*;
+use bytecode::instruction::*;
 
 pub fn read_instruction(input : &[u8], index_in : &mut usize) 
 	-> Result<Instruction, ReadError> {
@@ -9,9 +9,28 @@ pub fn read_instruction(input : &[u8], index_in : &mut usize)
 	if index >= input.len() {
 		return Err(ReadError::IndexOutOfBounds(index, input.len()))
 	}
+	/** Zero-parameter instructions **/
 
-	/* Begin to match load bytecodes */
-	match input[0] {
+	//
+	if input[*index_in] == 0x01 {
+		*index_in += 1;
+		return Ok(Instruction::PushConst(Kind::Null, 0));
+	}
+
+	//pop
+	if input[*index_in] == 0x57 {
+		*index_in += 1;
+		return Ok(Instruction::Pop)
+	}
+
+	/** Single-parameter instructions **/
+
+	//Check whether at least two bytecodes
+	if index >= input.len() {
+		return Err(ReadError::IndexOutOfBounds(index, input.len()))
+	}
+
+	match input[*index_in] {
 		//aload
 		0x19 => {
 			let from_where = input[index+1];
@@ -46,38 +65,82 @@ pub fn read_instruction(input : &[u8], index_in : &mut usize)
 	}
 
 	//aload_0..aload_3
-	if input[0] <= 0x2d && input[0] >= 0x2a {
-		let from_where = input[0] - 0x2a;
+	if input[*index_in] <= 0x2d && input[*index_in] >= 0x2a {
+		let from_where = input[*index_in] - 0x2a;
 		*index_in = index + 1;
 		return Ok(Instruction::Load(Kind::Ref, from_where));	
 	}
 
 	//dload_0..dload_3
-	if input[0] >= 0x26 && input[0] <= 0x29 {
-		let from_where = input[0] - 0x26;
+	if input[*index_in] >= 0x26 && input[*index_in] <= 0x29 {
+		let from_where = input[*index_in] - 0x26;
 		*index_in = index + 1;
 		return Ok(Instruction::Load(Kind::Double, from_where));	
 	}
 
 	//fload_0..fload_3
-	if input[0] >= 0x22 && input[0] <= 0x25 {
-		let from_where = input[0] - 0x22;
+	if input[*index_in] >= 0x22 && input[*index_in] <= 0x25 {
+		let from_where = input[*index_in] - 0x22;
 		*index_in = index + 1;
 		return Ok(Instruction::Load(Kind::Float, from_where));	
 	}
 
 	//fload_0..fload_3
-	if input[0] >= 0x1a && input[0] <= 0x1d {
-		let from_where = input[0] - 0x1a;
+	if input[*index_in] >= 0x1a && input[*index_in] <= 0x1d {
+		let from_where = input[*index_in] - 0x1a;
 		*index_in = index + 1;
 		return Ok(Instruction::Load(Kind::Int, from_where));	
 	}
 
 	//lload_0..lload_3
-	if input[0] >= 0x1e && input[0] <= 0x21 {
-		let from_where = input[0] - 0x1e;
+	if input[*index_in] >= 0x1e && input[*index_in] <= 0x21 {
+		let from_where = input[*index_in] - 0x1e;
 		*index_in = index + 1;
 		return Ok(Instruction::Load(Kind::Long, from_where));	
+	}
+
+	//bipush
+	if input[*index_in] == 0x10 {
+		*index_in += 1;
+		let byte = input[index_in];
+		return Ok(Instruction::PushConst(Kind::NumKind(NumKind::Byte), byte));
+	}
+
+	//dconst_0, dconst_1
+	if input[*index_in] == 0x0e || input[*index_in] == 0x0f {
+		let byte = match input[*index_in] - 0x0e {
+			0 => 0x0,
+			1 => 0x3f800000,
+			_ => panic!("Major internal error occurred. Program reached impossible state.")
+		};
+		*index_in += 1;
+		return Ok(Instruction::PushConst(Kind::NumKind(NumKind::Float), byte));
+	}
+
+	//fconst_0..dconst_2
+	if 0x0b <= input[*index_in] && input[*index_in] <= 0x0d {
+		let byte = match input[*index_in] - 0x0b {
+			0 => 0x0,
+			1 => 0x3ff0000000000000,
+			2 => 0x4000000000000000,
+			_ => panic!("Major internal error occurred. Program reached impossible state.")
+		};
+		*index_in += 1;
+		return Ok(Instruction::PushConst(Kind::NumKind(NumKind::Double), byte));
+	}
+
+	//lconst_0, lconst_1
+	if 0x09 <= input[*index_in] && input[*index_in] <= 0x0a {
+		let byte = input[*index_in] - 0x09;
+		*index_in += 1;
+		return Ok(Instruction::PushConst(Kind::NumKind(NumKind::Double), byte));
+	}
+
+	//lconst_0, lconst_1
+	if 0x09 <= input[*index_in] && input[*index_in] <= 0x0a {
+		let byte = input[*index_in] - 0x09;
+		*index_in += 1;
+		return Ok(Instruction::PushConst(Kind::NumKind(NumKind::Double), byte));
 	}
 
 	/* End match load bytecodes */
@@ -89,7 +152,7 @@ pub fn read_instruction(input : &[u8], index_in : &mut usize)
 fn read_32bit_integer(input : &[u8], index : usize) -> Result<u32, ReadError> {
 	if input.len() >= 4 {
 		return Ok(((input[3] as u32) << 24) + ((input[2] as u32) << 16) + 
-			((input[1] as u32) << 8) + input[0] as u32)
+			((input[1] as u32) << 8) + input[*index_in] as u32)
 	}
 	Err(ReadError::IndexOutOfBounds(index, input.len()))
 }
