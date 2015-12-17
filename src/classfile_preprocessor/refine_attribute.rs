@@ -81,7 +81,6 @@ pub fn refine_attribute(constants : &Vec<Constant>, raw_attribute : &RawAttribut
 						else{
 							panic!("Expected string for class type");		
 						}
-						()
 					}
 					_ => panic!("Expected class type")
 				}
