@@ -69,13 +69,26 @@ pub fn refine_attribute(constants : &Vec<Constant>, raw_attribute : &RawAttribut
 		"Exceptions" => {
 			let number_of_exceptions = read_u16(bytes[0],bytes[1]);
 			let mut i = 0;
-			let mut exceptions_index_table = Vec::new();
+			let mut exceptions_table = Vec::new();
 			while i < number_of_exceptions as usize {
-				exceptions_index_table.push(read_u16(bytes[i], bytes[i+1]));
+				match &constants[read_u16(bytes[i], bytes[i+1]) as usize] {
+					&Constant::Class {
+						name_index : ni
+					} => {
+						if let &Constant::Utf8(ref name) = &constants[ni as usize] {
+							exceptions_table.push(name.clone());
+						}
+						else{
+							panic!("Expected string for class type");		
+						}
+						()
+					}
+					_ => panic!("Expected class type")
+				}
 				i += 2;
 			}
 			Attribute::Exceptions {
-				exception_index_table : exceptions_index_table
+				exception_table : exceptions_table
 			}
 		}
 		"InnerClasses" => {
