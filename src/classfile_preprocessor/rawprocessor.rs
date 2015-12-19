@@ -9,7 +9,10 @@ pub fn read_class_file(source : &mut Read) -> Result<RawClassFile, ReadError> {
 	//println!("Reading into buf");
 	let mut buf = Vec::new();
 	source.read_to_end(&mut buf);
+	read_class_bytes(&buf)
+}
 
+pub fn read_class_bytes(buf : &[u8]) -> Result<RawClassFile, ReadError> {
 	if buf.len() < 4 {
 		return Err((buf.len() - 1, "Expected CAFEBABE magic number. Class file too short.".to_string()))
 	}
@@ -37,7 +40,7 @@ pub fn read_class_file(source : &mut Read) -> Result<RawClassFile, ReadError> {
 	let mut index = 10;
 	let mut constant_pool : Vec<RawCpInfo> = Vec::new();
 	for i in 0..(constant_pool_count) {
-		let cp_info_entry = try!(read_constant_pool_entry(&mut buf, &mut index));
+		let cp_info_entry = try!(read_constant_pool_entry(buf, &mut index));
 		constant_pool.push(cp_info_entry);
 	}
 
@@ -68,7 +71,7 @@ pub fn read_class_file(source : &mut Read) -> Result<RawClassFile, ReadError> {
 	let mut field_info_entries = Vec::new();
 	let old_index = index;
 	for i in 0..field_count {
-		let field_info_entry = try!(read_info_entry(&mut buf, &mut index));
+		let field_info_entry = try!(read_info_entry(buf, &mut index));
 		field_info_entries.push(field_info_entry);
 	}
 	let fsize = index - old_index;
@@ -84,7 +87,7 @@ pub fn read_class_file(source : &mut Read) -> Result<RawClassFile, ReadError> {
 	//println!("Reading method {} infos at index {}", method_count, index);
 	let mut method_info_entries = Vec::new();
 	for i in 0..method_count {
-		let method_info_entry = try!(read_info_entry(&mut buf, &mut index));
+		let method_info_entry = try!(read_info_entry(buf, &mut index));
 		method_info_entries.push(method_info_entry);
 	}
 
@@ -103,7 +106,7 @@ pub fn read_class_file(source : &mut Read) -> Result<RawClassFile, ReadError> {
 		method_info_entries.push(attribute_info_entry);
 	}*/
 
-	let attribute_entries = try!(read_attributes_info(&buf, &mut index, attribute_count as usize));
+	let attribute_entries = try!(read_attributes_info(buf, &mut index, attribute_count as usize));
 
 	Ok(RawClassFile {
 		minor_version : minor_version,
@@ -119,7 +122,7 @@ pub fn read_class_file(source : &mut Read) -> Result<RawClassFile, ReadError> {
 	})
 }
 
-pub fn read_constant_pool_entry(source : &mut Vec<u8>, index : &mut usize) 
+pub fn read_constant_pool_entry(source : &[u8], index : &mut usize) 
 		-> Result<RawCpInfo, ReadError> {
 	let mut local_index = *index;
 
@@ -190,7 +193,7 @@ pub fn read_constant_pool_entry(source : &mut Vec<u8>, index : &mut usize)
 	})
 }
 
-pub fn read_info_entry(source : &mut Vec<u8>, index : &mut usize) 
+pub fn read_info_entry(source : &[u8], index : &mut usize) 
 	-> Result<RawInfo, ReadError> {
 	let mut local_index = *index;
 	//println!("Begin index at {}", local_index);
@@ -223,7 +226,7 @@ pub fn read_info_entry(source : &mut Vec<u8>, index : &mut usize)
 	})
 }
 
-pub fn read_attributes_info(source : &Vec<u8>, index : &mut usize, 
+pub fn read_attributes_info(source : &[u8], index : &mut usize, 
 	attributes_count : usize) -> Result<Vec<RawAttributeInfo>, ReadError> {
 	let mut attributes_info = Vec::new();
 	let mut local_index = *index;
@@ -254,13 +257,13 @@ pub fn read_attributes_info(source : &Vec<u8>, index : &mut usize,
 	Ok(attributes_info)
 }
 
-pub fn read_method_entry(source : &mut Vec<u8>, index : &mut usize) 
+pub fn read_method_entry(source : &[u8], index : &mut usize) 
 	-> Result<RawInfo, ReadError> {
 	let local_index = *index;
 	panic!("TODO");
 }
 
-pub fn read_interface_entry(source : &mut Vec<u8>, index : &mut usize) 
+pub fn read_interface_entry(source : &[u8], index : &mut usize) 
 	-> Result<Vec<u8>, ReadError> {
 	panic!("Not implemented");	
 }

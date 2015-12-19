@@ -12,7 +12,7 @@ pub fn read_u32(b1 : u8, b2 : u8, b3 : u8, b4 : u8) -> u32 {
 	return Cursor::new(vec![b1,b2,b3,b4]).read_u32::<BigEndian>().unwrap();
 }
 
-pub fn read_utf_string(buf : &Vec<u8>, index : &mut usize, length : usize) 
+pub fn read_utf_string(buf : &[u8], index : &mut usize, length : usize) 
 		-> Result<String, ReadError> {
 	//println!("The length of utf 8 string is {}", length);
 	let mut output_string = String::new();
@@ -25,7 +25,7 @@ pub fn read_utf_string(buf : &Vec<u8>, index : &mut usize, length : usize)
 	Ok(output_string)
 }
 
-fn read_char(buf : &Vec<u8>, index : &mut usize) -> Result<u32, ReadError> {
+fn read_char(buf : &[u8], index : &mut usize) -> Result<u32, ReadError> {
 	let bit_vec = BitVec::from_bytes(&buf[*index..(*index+2)]);
 
 	match (bit_vec.get(0), bit_vec.get(1), bit_vec.get(2), 
