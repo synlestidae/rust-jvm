@@ -13,11 +13,9 @@ fn smoke_test() {
 	let mut cf = File::open("./src/tests/data/homemade/OneIntField.class").unwrap();
 	let mut itWorked = false;
 
-	if let Ok(raw_file) = read_class_file(&mut cf) {
-		match refine_classfile(&raw_file) {
-			Ok(cf) => (),
-			Err(err) => assert!(false)
-		}
+	match load_classfile_from_bytes(&raw_file) {
+		Ok(cf) => (),
+		Err(err) => assert!(false)
 	}
 	else{
 		assert!(false);
