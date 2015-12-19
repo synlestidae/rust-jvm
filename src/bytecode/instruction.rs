@@ -2,7 +2,7 @@ use std::cmp::{PartialEq, Eq};
 use classfile::constant::Constant;
 
 #[derive(Eq, PartialEq, Clone, Copy, Debug)]
-pub enum Instruction{
+pub enum Instruction {
 	/* Load and store instructions */
 	Load(Kind, Index),
 	ArrayLoad(Kind, ArrayIndex),
