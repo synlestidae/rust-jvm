@@ -25,12 +25,10 @@ pub fn load_classfile_from_file(path : &Path)
 	-> Result<RefinedClassFile, ClassFileProcessingError> {
 	
 	if let Ok(ref mut file) = File::open(path) {
-		let raw_classfile : RawClassFile;
-		
-		match read_class_file(file) {
-			Ok (rcf) => raw_classfile = rcf,
+		let raw_classfile = match read_class_file(file) {
+			Ok (rcf) => rcf,
 			Err((_, error_message)) => return Err(error_message)
-		}
+		};
 
 		refine_classfile(&raw_classfile)
 	}
