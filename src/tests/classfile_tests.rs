@@ -7,59 +7,11 @@ use std::io::prelude::*;
 use std::fs::File;
 use std::env;
 
-
-#[test]
-fn smoke_test() {
-	let mut cf = File::open("./src/tests/data/homemade/OneIntField.class").unwrap();
-	let mut itWorked = false;
-
-	match load_classfile_from_bytes(&raw_file) {
-		Ok(cf) => (),
-		Err(err) => assert!(false)
-	}
-	else{
-		assert!(false);
-	}
-}
-
-#[test]
-fn smoke_test_2() {
-	let mut cf = File::open("./src/tests/data/homemade/OneVoidMethod.class").unwrap();
-	let mut itWorked = false;
-
-	if let Ok(raw_file) = read_class_file(&mut cf) {
-		match refine_classfile(&raw_file) {
-			Ok(cf) => (),
-			Err(err) => assert!(false)
-		}
-	}
-	else{
-		assert!(false);
-	}
-}
-
-#[test]
-fn smoke_test_3() {
-	let mut cf = File::open("./src/tests/data/homemade/Empty.class").unwrap();
-	let mut itWorked = false;
-
-	if let Ok(raw_file) = read_class_file(&mut cf) {
-		match refine_classfile(&raw_file) {
-			Ok(cf) => (),
-			Err(err) => println!("Yeah of course it didn't work: {}", err)
-		}
-	}
-	else{
-		assert!(false);
-	}
-}
-
 #[test]
 fn test_class_is_public_1() {
-	let mut cf = File::open("./src/tests/data/homemade/Empty.class").unwrap();
-	let mut itWorked = false;
+	let mut cf_path = Path::new("./src/tests/data/homemade/OneIntField.class");
 
-	if let Ok(cf) = refine_classfile(&read_class_file(&mut cf).unwrap()) {
+	if let Ok(cf) = load_classfile_from_file(cf_path) {
 		assert!(cf.access_flags.ACC_PUBLIC);
 		assert!(!cf.access_flags.ACC_PROTECTED);
 		assert!(!cf.access_flags.ACC_STATIC);
@@ -72,7 +24,7 @@ fn test_class_is_public_1() {
 		assert!(!cf.access_flags.ACC_STRICT);
 		assert!(!cf.access_flags.ACC_SYNTHETIC);
 	}
-	else{
+	else {
 		assert!(false);
 	}	
 }

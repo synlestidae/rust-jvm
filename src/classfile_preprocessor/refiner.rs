@@ -16,13 +16,13 @@ pub fn refine_classfile(raw_classfile : &RawClassFile) -> Result<RefinedClassFil
 	let constants = process_constant_pool_table(&raw_classfile.constant_pool_table); 
 	let super_name : String; let this_name : String;
 
-	let pattern_to_match = (&constants[raw_classfile.this_class_index as usize - 1],  
+	let this_and_super = (&constants[raw_classfile.this_class_index as usize - 1],  
 		 &constants[raw_classfile.super_class_index as usize - 1]);
 
 	if let 
 		(&Constant::Class {name_index : this_class_name_index}, 
 		 &Constant::Class {name_index : super_class_name_index}) 
-		= pattern_to_match {
+		= this_and_super {
 
 		match (&constants[this_class_name_index as usize - 1], 
 			&constants[super_class_name_index as usize - 1]) {
@@ -34,7 +34,7 @@ pub fn refine_classfile(raw_classfile : &RawClassFile) -> Result<RefinedClassFil
 		}
 	}else{
 		return Err(format!("This or super class constant was not CONSTANT_Class_info: {:?}", 
-			pattern_to_match));
+			this_and_super));
 	}
 
 	let result = RefinedClassFile {

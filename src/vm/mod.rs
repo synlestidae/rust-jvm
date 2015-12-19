@@ -6,6 +6,8 @@ mod runtime_cp;
 mod loaded_class_collection;
 mod loading;
 mod package;
+mod heap_rep;
+mod memory;
 
 pub use vm::method::*;
 pub use vm::frame::*;
