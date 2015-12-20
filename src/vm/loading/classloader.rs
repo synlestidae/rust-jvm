@@ -1,11 +1,11 @@
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use vm::LoadedClasses;
-use vm::LoadedClass;
+use vm::Class;
 use vm::Package;
 
 pub trait ClassLoader {
-	fn load_class(class_name : &str) -> LoadedClass;
-	fn define_class(name : &str, bytes : &[u8]) -> LoadedClass;
+	fn load_class(class_name : &str) -> Class;
+	fn define_class(name : &str, bytes : &[u8]) -> Class;
 	fn define_package(name : &str, 
 					spec_title : &str,
                     spec_version : &str,
@@ -24,16 +24,29 @@ pub trait ClassLoader {
 }
 
 pub struct BootstrapClassLoader {
-	class_paths : Vec<Box<Path>>,
+	class_paths : Vec<PathBuf>,
 	loaded_classes : LoadedClasses
 }
 
+impl BootstrapClassLoader {
+	pub fn new(class_path : Vec<String>) -> BootstrapClassLoader {
+		let cps = class_path.iter()
+			.map(|cp| Path::new(cp).to_path_buf())
+			.collect();
+
+		BootstrapClassLoader {
+			class_paths : cps,
+			loaded_classes : LoadedClasses::new()
+		}
+	}
+}
+
 impl ClassLoader for BootstrapClassLoader {
-	fn load_class(class_name : &str) -> LoadedClass {
+	fn load_class(class_name : &str) -> Class {
 		panic!("Not implemented")
 	}
 
-	fn define_class(name : &str, bytes : &[u8]) -> LoadedClass {
+	fn define_class(name : &str, bytes : &[u8]) -> Class {
 		panic!("Not implemented")
 	}
 

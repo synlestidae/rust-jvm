@@ -6,3 +6,4 @@ pub mod classfile;
 pub mod access_flags;
 pub mod class;
 pub mod interface;
+pub mod javatype;
