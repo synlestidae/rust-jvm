@@ -24,10 +24,12 @@ impl Class {
 		let mut sum = 0;
 
 		for f in self.public_fields.iter() {
+			self.fields.insert(f.name(), sum);
 			sum += f.size_of();
 		}
 
 		for f in self.private_fields.iter() {
+			self.fields.insert(f.name(), sum);
 			sum += f.size_of();
 		}
 

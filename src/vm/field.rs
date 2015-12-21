@@ -6,8 +6,14 @@ use vm::memory::heap_size::HeapSize;
 #[derive(Clone, Debug)]
 pub struct Field {
 	pub flags : AccessFlags,
-	pub name : String,
+	name : String,
 	pub field_type : JavaType
+}
+
+impl Field {
+	pub fn name(self : &Self) -> String {
+		self.name.clone()
+	}
 }
 
 impl HeapSize for Field {
