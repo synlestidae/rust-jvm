@@ -1,4 +1,5 @@
 use classfile::javatype::*;
+use vm::class::Class;
 use vm::memory::heap::*;
 use vm::memory::representation::*;
 use std::iter::repeat;
@@ -11,7 +12,7 @@ pub struct GcHeap {
 	eden_pointer : usize,
 	tenured_pointer : usize,
 
-	virtual_map : HashMap<usize, (HeapKind, usize, JavaType)>
+	virtual_map : HashMap<usize, (HeapKind, usize, String)>
 }
 
 #[derive(Debug, Clone, Copy, Hash)]
@@ -43,8 +44,8 @@ impl GcHeap {
 }
 
 impl Heap for GcHeap {
-	fn allocate(self : &mut Self, java_type : JavaType) -> Option<usize> {
-		let size = java_type.size();
+	fn allocate_object(self : &mut Self, java_class : &Class) -> Option<usize> {
+		let size = java_class.total_size();
 
 		if size > self.tenured.len() || size + self.tenured_pointer 
 			>= self.tenured.len() {
@@ -53,7 +54,7 @@ impl Heap for GcHeap {
 
 		if self.eden_pointer + size < self.eden.len() {
 			let pointer = self.eden_pointer;
-			self.virtual_map.insert(pointer, (HeapKind::Eden, pointer, java_type));
+			self.virtual_map.insert(pointer, (HeapKind::Eden, pointer, java_class.name()));
 			self.eden_pointer += size;
 			return Some(pointer);
 		}
@@ -61,6 +62,7 @@ impl Heap for GcHeap {
 			return None;
 		}
 	}
+
 	fn get<'a>(self : &mut Self, index : usize) -> Option<&'a mut [u8]> {
 		panic!("Not implemented")
 	}
@@ -69,5 +71,8 @@ impl Heap for GcHeap {
 	}
 	fn current_size(self : &Self,) -> usize {
 		self.eden_pointer + self.tenured_pointer
+	}
+	fn garbage_collect() -> usize {
+		panic!("Not implemented")
 	}
 }
