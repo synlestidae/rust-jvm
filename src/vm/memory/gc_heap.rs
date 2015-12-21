@@ -4,6 +4,7 @@ use vm::memory::heap::*;
 use vm::memory::representation::*;
 use std::iter::repeat;
 use std::collections::HashMap;
+use vm::LoadedClasses;
 
 pub struct GcHeap {
 	eden : Box<[u8]>,
@@ -63,16 +64,40 @@ impl Heap for GcHeap {
 		}
 	}
 
-	fn get<'a>(self : &mut Self, index : usize) -> Option<&'a mut [u8]> {
-		panic!("Not implemented")
+	fn allocate_primitive(self : &mut Self, java_type : &Primitive) -> Option<usize> {
+		panic!("Not implemented");
 	}
+
+	fn get<'a>(self : &'a mut Self, index : usize, classes : &LoadedClasses) -> Option<&'a mut [u8]> {
+		let (heap, lower_index, name) = match &self.virtual_map.get(&index) {
+			&Some(&(HeapKind::Eden, mindex, ref name)) => (&mut self.eden, mindex, name),
+			&Some(&(HeapKind::Tenured, mindex, ref name)) => (&mut self.tenured, mindex, name),
+			_ => return None
+		};
+
+		if let Some(ref class) = classes.find_class(name) {
+			let upper_index = lower_index + class.total_size();
+			if upper_index < heap.len() {
+				return Some(&mut heap[lower_index..upper_index]);
+			}
+			else {
+				return None
+			}
+		}
+		else{
+			return None
+		}
+	}
+
 	fn maximum_size(self : &Self,) -> usize {
 		self.eden.len() + self.tenured.len() 
 	}
+
 	fn current_size(self : &Self,) -> usize {
 		self.eden_pointer + self.tenured_pointer
 	}
-	fn garbage_collect() -> usize {
+	
+	fn garbage_collect(roots : &[usize]) -> usize {
 		panic!("Not implemented")
 	}
 }
