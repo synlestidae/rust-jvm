@@ -13,15 +13,11 @@ pub struct GcHeap {
 	eden_pointer : usize,
 	tenured_pointer : usize,
 
-	virtual_map : HashMap<usize, (HeapKind, usize, JavaHeapType)>
+	virtual_map : HashMap<usize, (HeapKind, usize, JavaType)>
 }
 
 #[derive(Debug, Clone, Copy, Hash)]
 enum HeapKind {Eden, Tenured}
-enum JavaHeapType {
-	Obj(String),
-	Num(Numeric)
-}
 
 impl GcHeap {
 	pub fn new(size : usize) -> GcHeap {
@@ -59,7 +55,7 @@ impl Heap for GcHeap {
 
 		if self.eden_pointer + size < self.eden.len() {
 			let pointer = self.eden_pointer;
-			self.virtual_map.insert(pointer, (HeapKind::Eden, pointer, JavaHeapType::Obj(java_class.name())));
+			self.virtual_map.insert(pointer, (HeapKind::Eden, pointer, JavaType::Ref(java_class.name())));
 			self.eden_pointer += size;
 			return Some(pointer);
 		}
@@ -68,7 +64,7 @@ impl Heap for GcHeap {
 		}
 	}
 
-	fn allocate_numeric(self : &mut Self, java_type : Numeric) -> Option<usize> {
+	fn allocate_type(self : &mut Self, java_type : JavaType) -> Option<usize> {
 		let size = java_type.size();
 
 		if size > self.tenured.len() || size + self.tenured_pointer 
@@ -78,7 +74,7 @@ impl Heap for GcHeap {
 
 		if self.eden_pointer + size < self.eden.len() {
 			let pointer = self.eden_pointer;
-			self.virtual_map.insert(pointer, (HeapKind::Eden, pointer, JavaHeapType::Num(java_type)));
+			self.virtual_map.insert(pointer, (HeapKind::Eden, pointer, java_type));
 			self.eden_pointer += size;
 			return Some(pointer);
 		}
@@ -89,8 +85,8 @@ impl Heap for GcHeap {
 
 	fn get_object_mut<'a>(self : &'a mut Self, index : usize, classes : &LoadedClasses) -> Option<&'a mut [u8]> {
 		let (heap, lower_index, name) = match &self.virtual_map.get(&index) {
-			&Some(&(HeapKind::Eden, mindex, JavaHeapType::Obj(ref name))) => (&mut self.eden, mindex, name),
-			&Some(&(HeapKind::Tenured, mindex, JavaHeapType::Obj(ref name))) => (&mut self.tenured, mindex, name),
+			&Some(&(HeapKind::Eden, mindex, JavaType::Ref(ref name))) => (&mut self.eden, mindex, name),
+			&Some(&(HeapKind::Tenured, mindex, JavaType::Ref(ref name))) => (&mut self.tenured, mindex, name),
 			_ => return None
 		};
 

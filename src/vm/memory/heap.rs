@@ -6,7 +6,7 @@ use classfile::javatype::*;
 
 pub trait Heap {
 	fn allocate_object(self : &mut Self, class : &Class) -> Option<usize>;
-	fn allocate_numeric(self : &mut Self, java_type : Numeric) -> Option<usize>;
+	fn allocate_type(self : &mut Self, java_type : JavaType) -> Option<usize>;
 	fn get_object_mut<'a>(self : &'a mut Self, index : usize, classes : &LoadedClasses) -> Option<&'a mut [u8]>;
 	fn maximum_size(self : &Self, ) -> usize;
 	fn current_size(self : &Self, ) -> usize;
