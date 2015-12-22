@@ -13,11 +13,15 @@ pub struct GcHeap {
 	eden_pointer : usize,
 	tenured_pointer : usize,
 
-	virtual_map : HashMap<usize, (HeapKind, usize, String)>
+	virtual_map : HashMap<usize, (HeapKind, usize, JavaHeapType)>
 }
 
 #[derive(Debug, Clone, Copy, Hash)]
 enum HeapKind {Eden, Tenured}
+enum JavaHeapType {
+	Obj(String),
+	Num(Numeric)
+}
 
 impl GcHeap {
 	pub fn new(size : usize) -> GcHeap {
@@ -55,7 +59,7 @@ impl Heap for GcHeap {
 
 		if self.eden_pointer + size < self.eden.len() {
 			let pointer = self.eden_pointer;
-			self.virtual_map.insert(pointer, (HeapKind::Eden, pointer, java_class.name()));
+			self.virtual_map.insert(pointer, (HeapKind::Eden, pointer, JavaHeapType::Obj(java_class.name())));
 			self.eden_pointer += size;
 			return Some(pointer);
 		}
@@ -64,14 +68,29 @@ impl Heap for GcHeap {
 		}
 	}
 
-	fn allocate_primitive(self : &mut Self, java_type : &Primitive) -> Option<usize> {
-		panic!("Not implemented");
+	fn allocate_numeric(self : &mut Self, java_type : Numeric) -> Option<usize> {
+		let size = java_type.size();
+
+		if size > self.tenured.len() || size + self.tenured_pointer 
+			>= self.tenured.len() {
+			return None;
+		}
+
+		if self.eden_pointer + size < self.eden.len() {
+			let pointer = self.eden_pointer;
+			self.virtual_map.insert(pointer, (HeapKind::Eden, pointer, JavaHeapType::Num(java_type)));
+			self.eden_pointer += size;
+			return Some(pointer);
+		}
+		else {
+			return None;
+		}
 	}
 
-	fn get<'a>(self : &'a mut Self, index : usize, classes : &LoadedClasses) -> Option<&'a mut [u8]> {
+	fn get_object_mut<'a>(self : &'a mut Self, index : usize, classes : &LoadedClasses) -> Option<&'a mut [u8]> {
 		let (heap, lower_index, name) = match &self.virtual_map.get(&index) {
-			&Some(&(HeapKind::Eden, mindex, ref name)) => (&mut self.eden, mindex, name),
-			&Some(&(HeapKind::Tenured, mindex, ref name)) => (&mut self.tenured, mindex, name),
+			&Some(&(HeapKind::Eden, mindex, JavaHeapType::Obj(ref name))) => (&mut self.eden, mindex, name),
+			&Some(&(HeapKind::Tenured, mindex, JavaHeapType::Obj(ref name))) => (&mut self.tenured, mindex, name),
 			_ => return None
 		};
 
@@ -97,7 +116,12 @@ impl Heap for GcHeap {
 		self.eden_pointer + self.tenured_pointer
 	}
 	
-	fn garbage_collect(roots : &[usize]) -> usize {
+	fn garbage_collect(roots : &[usize], classes : &LoadedClasses) -> usize {
+		panic!("Not implemented")
+	}
+
+	fn garbage_collect_with_report(roots : &[usize], classes : &LoadedClasses) 
+		-> GcReport {
 		panic!("Not implemented")
 	}
 }

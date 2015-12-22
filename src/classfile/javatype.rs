@@ -48,15 +48,39 @@ impl JavaType {
 			&JavaType::Reference(_) => 8,
 			&JavaType::Primitive(Primitive::Boolean) => 4,
 			&JavaType::Primitive(Primitive::ReturnAddress) => 8,
-			&JavaType::Primitive(Primitive::Numeric(ref num)) => match num {
-				&Numeric::Integral(Integral::Byte) => 1,
-				&Numeric::Integral(Integral::Short) => 2,
-				&Numeric::Integral(Integral::Int) => 4,
-				&Numeric::Integral(Integral::Long) => 8,
-				&Numeric::Integral(Integral::Char) => 2,
-				&Numeric::FloatingPoint(FloatingPoint::Float) => 4,
-				&Numeric::FloatingPoint(FloatingPoint::Double) => 8
+			&JavaType::Primitive(Primitive::Numeric(ref num)) => num.size()
+		}
+	}
+
+	pub fn from(type_name : &str) -> Option<JavaType> {
+		let mut i = 0;
+		let mut java_type : JavaType;
+
+		return Some(match type_name {
+			"int" => JavaType::Primitive(Primitive::Numeric(Numeric::Integral(Integral::Int))),
+			"byte" => JavaType::Primitive(Primitive::Numeric(Numeric::Integral(Integral::Byte))),
+			"long" => JavaType::Primitive(Primitive::Numeric(Numeric::Integral(Integral::Long))),
+			"short" => JavaType::Primitive(Primitive::Numeric(Numeric::Integral(Integral::Short))),
+			"char" => JavaType::Primitive(Primitive::Numeric(Numeric::Integral(Integral::Char))),
+			"float" => JavaType::Primitive(Primitive::Numeric(Numeric::FloatingPoint(FloatingPoint::Float))),
+			"double" => JavaType::Primitive(Primitive::Numeric(Numeric::FloatingPoint(FloatingPoint::Double))),
+			_ => {
+				JavaType::Reference(Reference::Class(type_name.to_string()))
 			}
+		});
+	}
+}
+
+impl Numeric {
+	pub fn size(self : &Self) -> usize {
+		match self {
+			&Numeric::Integral(Integral::Byte) => 1,
+			&Numeric::Integral(Integral::Short) => 2,
+			&Numeric::Integral(Integral::Int) => 4,
+			&Numeric::Integral(Integral::Long) => 8,
+			&Numeric::Integral(Integral::Char) => 2,
+			&Numeric::FloatingPoint(FloatingPoint::Float) => 4,
+			&Numeric::FloatingPoint(FloatingPoint::Double) => 8
 		}
 	}
 }

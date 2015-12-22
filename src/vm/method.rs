@@ -4,7 +4,7 @@ use classfile::javatype::*;
 
 #[derive(Debug, Clone)]
 pub struct Method {
-	pub code : Vec<Instruction>,
+	pub code : Vec<u8>,
 	pub flags : AccessFlags,
 	pub name : String,
 	pub parameters : Vec<JavaType>,

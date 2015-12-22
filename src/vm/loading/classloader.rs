@@ -1,11 +1,23 @@
 use std::path::{Path, PathBuf};
+
+use classfile_preprocessor::{load_classfile_from_bytes,
+	load_classfile_from_file};
+
 use vm::LoadedClasses;
 use vm::Class;
 use vm::Package;
 
+pub enum ClassLoadError {
+	ClassFormat, 
+	ClassNotFound,
+	Security,
+	NoClassDefFound,
+	IOError
+}
+
 pub trait ClassLoader {
-	fn load_class(class_name : &str) -> Class;
-	fn define_class(name : &str, bytes : &[u8]) -> Class;
+	fn load_class(class_name : &str) -> Result<Class, ClassLoadError>;
+	fn define_class(name : &str, bytes : &[u8]) -> Result<Class, ClassLoadError>;
 	fn define_package(name : &str, 
 					spec_title : &str,
                     spec_version : &str,
@@ -14,9 +26,9 @@ pub trait ClassLoader {
                     impl_version : &str,
                     impl_vendor : &str,
                     seal_base : &str);
-	fn get_package(name : &str) -> Package;
+	fn get_package(name : &str) -> Result<Package, ClassLoadError>;
 	fn get_packages() -> Vec<Package>;
-	fn find_library() -> String;
+	fn find_library() -> Result<String, ClassLoadError>;
 	fn set_default_assertion_status(enabled : bool);
 	fn set_package_assertion_status(package_name : &str, enabled : bool);
 	fn set_class_assertion_status(class_name : &str, enabled : bool);
@@ -42,12 +54,17 @@ impl BootstrapClassLoader {
 }
 
 impl ClassLoader for BootstrapClassLoader {
-	fn load_class(class_name : &str) -> Class {
+	fn load_class(class_name : &str) -> Result<Class, ClassLoadError> {
 		panic!("Not implemented")
 	}
 
-	fn define_class(name : &str, bytes : &[u8]) -> Class {
-		panic!("Not implemented")
+	fn define_class(name : &str, bytes : &[u8]) -> Result<Class, ClassLoadError> {
+		if let Ok(class_file) = load_classfile_from_bytes(bytes) {
+			panic!("I don't know how to construct class files yet")
+		}
+		else {
+			return Err(ClassLoadError::ClassFormat);
+		}
 	}
 
 	fn define_package(name : &str, 
@@ -60,7 +77,7 @@ impl ClassLoader for BootstrapClassLoader {
                     seal_base : &str) {
 		panic!("Not implemented");
 	}
-	fn get_package(name : &str) -> Package {
+	fn get_package(name : &str) -> Result<Package, ClassLoadError> {
 		panic!("Not implemented")
 	}
 
@@ -68,7 +85,7 @@ impl ClassLoader for BootstrapClassLoader {
 		panic!("Not implemented")
 	}
 
-	fn find_library() -> String {
+	fn find_library() -> Result<String, ClassLoadError> {
 		panic!("Not implemented")
 	}
 

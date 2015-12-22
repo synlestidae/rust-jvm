@@ -12,6 +12,7 @@ fn test_class_is_public_1() {
 	let mut cf_path = Path::new("./src/tests/data/homemade/OneIntField.class");
 
 	if let Ok(cf) = load_classfile_from_file(cf_path) {
+		println!("CF:\n{:?}", cf);
 		assert!(cf.access_flags.ACC_PUBLIC);
 		assert!(!cf.access_flags.ACC_PROTECTED);
 		assert!(!cf.access_flags.ACC_STATIC);

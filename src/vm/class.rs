@@ -5,6 +5,8 @@ use vm::memory::representation::Representation;
 use vm::memory::heap_size::HeapSize;
 use std::cmp::Eq;
 use std::collections::HashMap;
+use classfile::classfile::RefinedClassFile;
+use classfile::javatype::*;
 
 #[derive(Clone, Debug)]
 pub struct Class {
@@ -20,7 +22,7 @@ pub struct Class {
 }
 
 impl Class {
-	fn initialize(&mut self) {
+	fn initialize_size(&mut self) {
 		let mut sum = 0;
 
 		for f in self.public_fields.iter() {
@@ -74,3 +76,17 @@ impl PartialEq for Class {
 }
 
 impl Eq for Class{}
+
+pub type ClassCreationError = String;
+
+pub fn create_class(class_file : &RefinedClassFile) 
+	-> Result<Class, ClassCreationError> {
+
+	for method_info in class_file.method_table.iter() {
+		let java_return_type = JavaType::from(&method_info.descriptor)
+			.unwrap();
+		let name = method_info.name.clone();
+	}
+
+	panic!("Class creation not implemented")
+}
