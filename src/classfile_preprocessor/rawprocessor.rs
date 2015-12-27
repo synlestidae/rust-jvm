@@ -6,7 +6,7 @@ use std::char;
 use util::*;
 
 pub fn read_class_file(source: &mut Read) -> Result<RawClassFile, ReadError> {
-    // println!("Reading into buf");
+
     let mut buf = Vec::new();
     source.read_to_end(&mut buf);
     read_class_bytes(&buf)
@@ -28,7 +28,7 @@ pub fn read_class_bytes(buf: &[u8]) -> Result<RawClassFile, ReadError> {
                     "Expected major/minor version. Class file too short.".to_string()));
     }
 
-    // println!("Reading major, minor numbers");
+
     let minor_version = read_u16(buf[4], buf[5]);
     let major_version = read_u16(buf[6], buf[7]);
 
@@ -37,10 +37,10 @@ pub fn read_class_bytes(buf: &[u8]) -> Result<RawClassFile, ReadError> {
                     "Expected constant pool offset. Class file too short.".to_string()));
     }
 
-    // println!("Reading the constant pool of ");
+
     // parse the variable-length constant pool
     let constant_pool_count = read_u16(buf[8], buf[9]) - 1;
-    // println!("Reading the constant pool of count {}", constant_pool_count);
+
     let mut index = 10;
     let mut constant_pool: Vec<RawCpInfo> = Vec::new();
     for i in 0..(constant_pool_count) {
@@ -49,23 +49,23 @@ pub fn read_class_bytes(buf: &[u8]) -> Result<RawClassFile, ReadError> {
     }
 
     let cpsize = (index) - 10;
-    // println!("Size of constant pool: {}", cpsize);
-    // println!("Reading the flags and things");
+
+
     let access_flags = read_u16(buf[cpsize + 10], buf[cpsize + 11]);
     let this_class = read_u16(buf[cpsize + 12], buf[cpsize + 13]);
     let super_class = read_u16(buf[cpsize + 14], buf[cpsize + 15]);
 
     let interfaces_size = read_u16(buf[cpsize + 16], buf[cpsize + 17]);
     let mut interfaces: Vec<u8> = Vec::new();
-    // println!("Reading the interfaces at {}", (18 + cpsize));
+
     for i in (18 + cpsize)..(18 + cpsize + interfaces_size as usize) {
         interfaces.push(buf[i]);
     }
-    // println!("Read {} interfaces", interfaces_size);
 
 
 
-    // println!("Reading field count at index {}", 18 + cpsize + interfaces_size as usize);
+
+
     let field_count = read_u16(buf[18 + cpsize + interfaces_size as usize],
                                buf[19 + cpsize + interfaces_size as usize]);
 
@@ -87,11 +87,11 @@ pub fn read_class_bytes(buf: &[u8]) -> Result<RawClassFile, ReadError> {
                     "Expected number of entries in method table. Class file too short".to_string()));
     }
 
-    // println!("Reading method count at index {}", index);
+
 
     let method_count = read_u16(buf[index], buf[index + 1]);
     index += 2;
-    // println!("Reading method {} infos at index {}", method_count, index);
+
     let mut method_info_entries = Vec::new();
     for i in 0..method_count {
         let method_info_entry = try!(read_info_entry(buf, &mut index));
@@ -105,15 +105,7 @@ pub fn read_class_bytes(buf: &[u8]) -> Result<RawClassFile, ReadError> {
 
     let attribute_count = read_u16(buf[index], buf[index + 1]);
     index += 2;
-
-    // println!("Reading {} attirbutes at index {}", attribute_count, index);
-
-    // let mut attribute_entries = Vec::new();
-    // for i in 0..attribute_count {
-    // let attribute_info_entry = try!(read_info_entry(&mut buf, &mut index));
-    // method_info_entries.push(attribute_info_entry);
-    // }
-
+    
     let attribute_entries = try!(read_attributes_info(buf, &mut index, attribute_count as usize));
 
     Ok(RawClassFile {
@@ -155,7 +147,7 @@ pub fn read_constant_pool_entry(source: &[u8], index: &mut usize) -> Result<RawC
 
             local_index += 3;
 
-            // println!("Trying to read this dang string: {}", local_index);
+
 
             let the_string = read_utf_string(source, &mut local_index, str_len as usize);
 
@@ -186,7 +178,7 @@ pub fn read_constant_pool_entry(source: &[u8], index: &mut usize) -> Result<RawC
     };
 
 
-    // println!("Source len: {} Byte count: {} Local index: {}", source.len(), additional_byte_count, local_index);
+
 
     if source.len() <= additional_byte_count + local_index {
         return Err((local_index,
@@ -209,7 +201,7 @@ pub fn read_constant_pool_entry(source: &[u8], index: &mut usize) -> Result<RawC
 
 pub fn read_info_entry(source: &[u8], index: &mut usize) -> Result<RawInfo, ReadError> {
     let mut local_index = *index;
-    // println!("Begin index at {}", local_index);
+
     if local_index + 8 >= source.len() {
         return Err((local_index,
                     format!("Not enough bytes for fixed-size field_info items at index {}. File \
