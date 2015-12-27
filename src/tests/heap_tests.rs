@@ -11,14 +11,13 @@ use vm::mempry::gc_heap::*;
 
 #[test]
 fn test_class_is_public_1() {
-	let cf_path = Path::new("./src/tests/data/homemade/OneIntField.class");
+    let cf_path = Path::new("./src/tests/data/homemade/OneIntField.class");
 
-	let heap = GcHeap::new(1024);
+    let heap = GcHeap::new(1024);
 
-	if let Ok(cf) = load_classfile_from_file(cf_path) {
-		
-	}
-	else{
-		assert!(false);
-	}
+    if let Ok(cf) = load_classfile_from_file(cf_path) {
+
+    } else {
+        assert!(false);
+    }
 }
