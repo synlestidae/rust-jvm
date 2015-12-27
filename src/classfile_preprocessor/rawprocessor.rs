@@ -105,7 +105,7 @@ pub fn read_class_bytes(buf: &[u8]) -> Result<RawClassFile, ReadError> {
 
     let attribute_count = read_u16(buf[index], buf[index + 1]);
     index += 2;
-    
+
     let attribute_entries = try!(read_attributes_info(buf, &mut index, attribute_count as usize));
 
     Ok(RawClassFile {
