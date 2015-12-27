@@ -10,83 +10,81 @@ use classfile::javatype::*;
 
 #[derive(Clone, Debug)]
 pub struct Class {
-	public_methods : Vec<Method>,
-	private_methods : Vec<Method>,
-	public_fields : Vec<Field>,
-	private_fields : Vec<Field>,
-	name : String,
-	super_class : Box<Class>,
+    public_methods: Vec<Method>,
+    private_methods: Vec<Method>,
+    public_fields: Vec<Field>,
+    private_fields: Vec<Field>,
+    name: String,
+    super_class: Box<Class>,
 
-	heap_size : usize,
-	fields : HashMap<String, usize>
+    heap_size: usize,
+    fields: HashMap<String, usize>,
 }
 
 impl Class {
-	fn initialize_size(&mut self) {
-		let mut sum = 0;
+    fn initialize_size(&mut self) {
+        let mut sum = 0;
 
-		for f in self.public_fields.iter() {
-			self.fields.insert(f.name(), sum);
-			sum += f.size_of();
-		}
+        for f in self.public_fields.iter() {
+            self.fields.insert(f.name(), sum);
+            sum += f.size_of();
+        }
 
-		for f in self.private_fields.iter() {
-			self.fields.insert(f.name(), sum);
-			sum += f.size_of();
-		}
+        for f in self.private_fields.iter() {
+            self.fields.insert(f.name(), sum);
+            sum += f.size_of();
+        }
 
-		self.heap_size = sum;
-	}
+        self.heap_size = sum;
+    }
 
-	pub fn name(self : &Self) -> String {
-		self.name.clone()
-	}
+    pub fn name(self: &Self) -> String {
+        self.name.clone()
+    }
 }
 
 impl Representation for Class {
-	fn total_size(self : &Self) -> usize {
-		self.heap_size
-	}
+    fn total_size(self: &Self) -> usize {
+        self.heap_size
+    }
 
-	fn private_field_offset_unsafe(self : &Self, field_name : &str) -> usize {
-		self.fields.get(field_name).unwrap().clone()
-	}
+    fn private_field_offset_unsafe(self: &Self, field_name: &str) -> usize {
+        self.fields.get(field_name).unwrap().clone()
+    }
 
-	fn public_field_offset_unsafe(self : &Self, field_name : &str) -> usize {
-		self.fields.get(field_name).unwrap().clone()
-	}
+    fn public_field_offset_unsafe(self: &Self, field_name: &str) -> usize {
+        self.fields.get(field_name).unwrap().clone()
+    }
 
-	fn private_field_offset(self : &Self, field_name : &str) -> Option<usize> {
-		match self.fields.get(field_name) {
-			Some(&u) => Some(u),
-			None => None
-		}
-	}
+    fn private_field_offset(self: &Self, field_name: &str) -> Option<usize> {
+        match self.fields.get(field_name) {
+            Some(&u) => Some(u),
+            None => None,
+        }
+    }
 
-	fn public_field_offset(self : &Self, field_name : &str) -> Option<usize> {
-		self.private_field_offset(field_name)
-	}
+    fn public_field_offset(self: &Self, field_name: &str) -> Option<usize> {
+        self.private_field_offset(field_name)
+    }
 }
 
 
 impl PartialEq for Class {
-	fn eq (self : &Self, other : &Self) -> bool {
-		self.name == other.name
-	}
+    fn eq(self: &Self, other: &Self) -> bool {
+        self.name == other.name
+    }
 }
 
-impl Eq for Class{}
+impl Eq for Class {}
 
 pub type ClassCreationError = String;
 
-pub fn create_class(class_file : &RefinedClassFile) 
-	-> Result<Class, ClassCreationError> {
+pub fn create_class(class_file: &RefinedClassFile) -> Result<Class, ClassCreationError> {
 
-	for method_info in class_file.method_table.iter() {
-		let java_return_type = JavaType::from(&method_info.descriptor)
-			.unwrap();
-		let name = method_info.name.clone();
-	}
+    for method_info in class_file.method_table.iter() {
+        let java_return_type = JavaType::from(&method_info.descriptor).unwrap();
+        let name = method_info.name.clone();
+    }
 
-	panic!("Class creation not implemented")
+    panic!("Class creation not implemented")
 }

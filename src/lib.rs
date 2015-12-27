@@ -1,8 +1,8 @@
-mod bytecode; 
-mod bytecode_preprocessor;  
-mod classfile;  
-mod classfile_preprocessor;  
-mod tests;  
+mod bytecode;
+mod bytecode_preprocessor;
+mod classfile;
+mod classfile_preprocessor;
+mod tests;
 mod vm;
 mod util;
 
