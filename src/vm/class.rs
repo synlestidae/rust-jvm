@@ -7,18 +7,31 @@ use std::cmp::Eq;
 use std::collections::HashMap;
 use classfile::classfile::RefinedClassFile;
 use classfile::javatype::*;
+use classfile::access_flags::AccessFlags;
+use classfile::info::*;
 
 #[derive(Clone, Debug)]
 pub struct Class {
     name: String,
-    super_class: Box<Class>,
-    heap_size: usize,
+    super_class_name: String,
+    interface_class_names: Vec<String>,
     fields: HashMap<String, (Field, usize)>,
     methods: HashMap<String, Method>,
+    access_flags: AccessFlags,
+    heap_size: usize,
+}
+
+pub enum ClassCreationError {
+    InvalidFormat(String),
 }
 
 impl Class {
-    fn new(name: &str, fields: Vec<Field>, methods: Vec<Method>, super_class: Class) -> Class {
+    fn from(class_file: RefinedClassFile) -> Result<Class, ClassCreationError> {
+        let fields = fields_from_classfile(&class_file);
+        let methods = methods_from_classfile(&class_file);
+        let name = class_file.this_class;
+        let super_name = class_file.super_class;
+
         let mut fields_map = HashMap::new();
         let mut methods_map = HashMap::new();
 
@@ -32,13 +45,15 @@ impl Class {
             methods_map.insert(m.name.clone(), m);
         }
 
-        Class {
-            name: name.to_string(),
-            super_class: Box::new(super_class),
-            heap_size: sum,
+        Ok(Class {
+            name: name,
+            super_class_name: super_name,
+            interface_class_names: Vec::new(),
             fields: fields_map,
             methods: methods_map,
-        }
+            access_flags: class_file.access_flags,
+            heap_size: sum,
+        })
     }
 
     pub fn name(self: &Self) -> String {
@@ -67,4 +82,18 @@ impl PartialEq for Class {
 
 impl Eq for Class {}
 
-pub type ClassCreationError = String;
+fn fields_from_classfile(class_file: &RefinedClassFile) -> Vec<Field> {
+    class_file.field_table.iter().map(|ref f| make_field(&f)).collect()
+}
+
+fn methods_from_classfile(class_file: &RefinedClassFile) -> Vec<Method> {
+    class_file.method_table.iter().map(|ref f| make_method(&f)).collect()
+}
+
+fn make_field(field_info: &Info) -> Field {
+    panic!("Not done yet")
+}
+
+fn make_method(field_info: &Info) -> Method {
+    panic!("Not done yet")
+}

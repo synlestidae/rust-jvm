@@ -2,9 +2,9 @@ use std::path::{Path, PathBuf};
 
 use classfile_preprocessor::{load_classfile_from_bytes, load_classfile_from_file};
 
-use vm::LoadedClasses;
-use vm::Class;
-use vm::Package;
+use vm::{LoadedClasses, Class, Package, ClassCreationError};
+
+use std::env;
 
 pub enum ClassLoadError {
     ClassFormat,
@@ -59,7 +59,7 @@ impl ClassLoader for BootstrapClassLoader {
 
     fn define_class(name: &str, bytes: &[u8]) -> Result<Class, ClassLoadError> {
         if let Ok(class_file) = load_classfile_from_bytes(bytes) {
-            panic!("I don't know how to construct class files yet")
+            panic!("not implemented")
         } else {
             return Err(ClassLoadError::ClassFormat);
         }
