@@ -1,6 +1,6 @@
 use classfile::class::Class;
 
-#[derive(Clone, Debug)]
+#[derive(PartialEq, Eq, Clone, Debug)]
 pub enum JavaType {
     Byte,
     Short,
