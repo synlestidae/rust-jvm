@@ -17,7 +17,7 @@ pub enum ClassLoadError {
 pub trait ClassLoader {
     fn load_class(class_name: &str) -> Result<Class, ClassLoadError>;
     fn define_class(name: &str, bytes: &[u8]) -> Result<Class, ClassLoadError>;
-    fn resolve_class(self : &mut Self, class : Class);
+    fn resolve_class(self: &mut Self, class: Class);
     fn define_package(name: &str,
                       spec_title: &str,
                       spec_version: &str,
@@ -67,7 +67,7 @@ impl ClassLoader for BootstrapClassLoader {
         Err(ClassLoadError::ClassFormat)
     }
 
-    fn resolve_class(self : &mut Self, class : Class) {
+    fn resolve_class(self: &mut Self, class: Class) {
         self.loaded_classes.add_class(class)
     }
 
