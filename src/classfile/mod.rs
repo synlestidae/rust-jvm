@@ -8,6 +8,6 @@ pub mod class;
 pub mod interface;
 pub mod javatype;
 
-mod method_descriptor;
+mod descriptor;
 
-pub use classfile::method_descriptor::*;
+pub use classfile::descriptor::*;
