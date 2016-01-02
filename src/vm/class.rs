@@ -26,7 +26,7 @@ pub enum ClassCreationError {
 }
 
 impl Class {
-    fn from(class_file: RefinedClassFile) -> Result<Class, ClassCreationError> {
+    pub fn from(class_file: RefinedClassFile) -> Result<Class, ClassCreationError> {
         let fields = fields_from_classfile(&class_file);
         let methods = methods_from_classfile(&class_file);
         let name = class_file.this_class;
