@@ -59,7 +59,8 @@ impl ClassLoader for BootstrapClassLoader {
 
     fn define_class(name: &str, bytes: &[u8]) -> Result<Class, ClassLoadError> {
         if let Ok(class_file) = load_classfile_from_bytes(bytes) {
-            panic!("not implemented")
+            let class = Class::from(class_file);
+            Ok(class)
         } else {
             return Err(ClassLoadError::ClassFormat);
         }
