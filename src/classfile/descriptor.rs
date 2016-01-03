@@ -14,29 +14,37 @@ impl MethodDescriptor {
         if line.len() <= 0 {
             return Err("Cannot parse empty string".to_string());
         }
+
         let mut i = 0;
         if line[i] != '(' {
             return Err("Expected '(' on method descriptor at index 0".to_string());
         }
+
+        let mut parameters = Vec::new();
         while line[i] != ')' && i < line.len() {
-            let t = match line[i] {
-                'B' => JavaType::Byte,
-                'C' => JavaType::Char,
-                'D' => JavaType::Double,
-                'F' => JavaType::Float,
-                'I' => JavaType::Int,
-                'J' => JavaType::Long,
-                'L' => panic!("Not ready for this"),
-                'S' => JavaType::Short,
-                'Z' => JavaType::Int,
-                '[' => panic!("Not ready for this"),
-                _ => return Err(format!("Unexpected character '{}' at index {}", i, line[i])),
-            };
-            i += 1;
-            panic!("Not ready for this")
+            parameters.push(try!(parse_field_type(&line, &mut i)));
         }
+
         panic!("Not ready for this")
     }
+}
+
+fn parse_field_type(line: &[char], i: &mut usize) -> Result<JavaType, String> {
+    let t = match line[*i] {
+        'B' => JavaType::Byte,
+        'C' => JavaType::Char,
+        'D' => JavaType::Double,
+        'F' => JavaType::Float,
+        'I' => JavaType::Int,
+        'J' => JavaType::Long,
+        'L' => panic!("Not ready for this"),
+        'S' => JavaType::Short,
+        'Z' => JavaType::Int,
+        '[' => panic!("Not ready for this"),
+        _ => return Err(format!("Unexpected character '{}' at index {}", i, line[*i])),
+    };
+    *i += 1;
+    Ok(t)
 }
 
 #[derive(PartialEq, Eq, Debug, Clone)]
