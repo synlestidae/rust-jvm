@@ -1,5 +1,6 @@
 use classfile::javatype::JavaType;
 use std::ascii::*;
+use vm::memory::heap_size::HeapSize;
 
 #[derive(PartialEq, Eq, Debug, Clone)]
 pub struct MethodDescriptor {
@@ -52,4 +53,14 @@ pub enum FieldType {
     Base(JavaType),
     Object(String),
     Array(Box<FieldType>),
+}
+
+impl HeapSize for FieldType {
+    fn size_of(&self) -> usize {
+        match self {
+            &FieldType::Base(ref java_type) => java_type.size(),
+            &FieldType::Object(ref java_type) => 8,
+            &FieldType::Array(ref java_type) => 8
+        }
+    }
 }

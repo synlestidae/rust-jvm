@@ -6,7 +6,7 @@ use classfile::MethodDescriptor;
 #[derive(Debug, Clone)]
 pub struct Method {
     pub code: Vec<u8>,
-    pub flags: AccessFlags,
+    pub access_flags: AccessFlags,
     pub name: String,
-    pub method_descriptor: MethodDescriptor,
+    pub descriptor: MethodDescriptor,
 }

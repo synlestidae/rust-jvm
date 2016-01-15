@@ -1,5 +1,6 @@
 use classfile::constant::Constant;
 
+
 pub type ExceptionTableEntry = (u16, u16, u16, Constant);
 pub type InnerClass = (u16, u16, u16, u16);
 

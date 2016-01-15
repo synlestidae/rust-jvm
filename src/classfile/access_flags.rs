@@ -1,4 +1,4 @@
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub struct AccessFlags {
     pub ACC_PUBLIC: bool,
     pub ACC_PRIVATE: bool,

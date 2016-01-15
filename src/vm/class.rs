@@ -3,12 +3,16 @@ use vm::Field;
 use vm::ClassLoader;
 use vm::memory::representation::Representation;
 use vm::memory::heap_size::HeapSize;
+
 use std::cmp::Eq;
 use std::collections::HashMap;
+
 use classfile::classfile::RefinedClassFile;
 use classfile::javatype::*;
 use classfile::access_flags::AccessFlags;
 use classfile::info::*;
+use classfile::MethodDescriptor;
+use classfile::attribute::Attribute;
 
 #[derive(Clone, Debug)]
 pub struct Class {
@@ -38,7 +42,8 @@ impl Class {
         let mut sum = 0;
         for f in fields.into_iter() {
             sum = sum + f.size_of();
-            fields_map.insert(f.name(), (f, sum));
+            let name = f.name.clone();
+            fields_map.insert(name, (f, sum));
         }
 
         for m in methods.into_iter() {
@@ -94,6 +99,33 @@ fn make_field(field_info: &Info) -> Field {
     panic!("Not done yet")
 }
 
-fn make_method(field_info: &Info) -> Method {
-    panic!("Not done yet")
+fn make_method(method_info: &Info) -> Method {
+    let descriptor = MethodDescriptor::parse_from(
+            &method_info.descriptor)
+        .unwrap();
+
+    //scan for a code attribute
+    for attribute in &method_info.attributes {
+        match attribute {
+            &Attribute::Code {
+                max_stack: _,
+                max_locals: _,
+                code: ref attr_code,
+                exception_table: _,
+                attributes: _,
+
+            } => {
+                return Method {
+                    access_flags : method_info.access_flags,
+                    name : method_info.name.clone(),
+                    descriptor : descriptor,
+                    code : attr_code.clone()
+                }
+            }
+            //continue if nothing found
+            _ => {}
+        }
+    }
+
+    panic!("Method's Info object doesn't have a code attribute");
 }
