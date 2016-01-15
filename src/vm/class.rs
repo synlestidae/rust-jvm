@@ -96,7 +96,13 @@ fn methods_from_classfile(class_file: &RefinedClassFile) -> Vec<Method> {
 }
 
 fn make_field(field_info: &Info) -> Field {
-    panic!("Not done yet")
+    let field_descriptor = JavaType::parse_field_type(&field_info.descriptor).unwrap();
+
+    Field {
+        flags : field_info.access_flags,
+        name : field_info.name.clone(),
+        field_type : field_descriptor.clone()
+    }
 }
 
 fn make_method(method_info: &Info) -> Method {

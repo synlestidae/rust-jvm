@@ -9,11 +9,11 @@ use vm::memory::heap_size::HeapSize;
 pub struct Field {
     pub flags: AccessFlags,
     pub name: String,
-    pub field_type: FieldType
+    pub field_type: JavaType
 }
 
 impl HeapSize for Field {
     fn size_of(self: &Self) -> usize {
-        self.field_type.size_of()
+        self.field_type.size()
     }
 }

@@ -64,6 +64,7 @@ impl ClassLoader for BootstrapClassLoader {
                 return Ok(class);
             }
         }
+        
         Err(ClassLoadError::ClassFormat)
     }
 

@@ -23,36 +23,32 @@ impl MethodDescriptor {
 
         let mut parameters = Vec::new();
         while line[i] != ')' && i < line.len() {
-            parameters.push(try!(parse_field_type(&line, &mut i)));
+            parameters.push(try!(JavaType::parse_field_type_partial(&line, &mut i)));
         }
 
         panic!("Not ready for this")
     }
 }
 
-fn parse_field_type(line: &[char], i: &mut usize) -> Result<JavaType, String> {
-    let t = match line[*i] {
-        'B' => JavaType::Byte,
-        'C' => JavaType::Char,
-        'D' => JavaType::Double,
-        'F' => JavaType::Float,
-        'I' => JavaType::Int,
-        'J' => JavaType::Long,
-        'L' => panic!("Not ready for this"),
-        'S' => JavaType::Short,
-        'Z' => JavaType::Int,
-        '[' => panic!("Not ready for this"),
-        _ => return Err(format!("Unexpected character '{}' at index {}", i, line[*i])),
-    };
-    *i += 1;
-    Ok(t)
+pub type FieldDescriptor = FieldType;
+
+impl FieldType {
+    pub fn parse_from(s : &str) -> Result<FieldDescriptor, String> {
+        let java_type = try!(JavaType::parse_field_type(s));
+
+        Ok(match java_type {
+            JavaType::Ref(class_name) => FieldType::Object(class_name),
+            JavaType::ArrayRef(boxed_java_type, n) => FieldType::Array(Box::new(FieldType::Base(*boxed_java_type)), n),
+            anything_else => FieldType::Base(anything_else)
+        })
+    }
 }
 
 #[derive(PartialEq, Eq, Debug, Clone)]
 pub enum FieldType {
     Base(JavaType),
     Object(String),
-    Array(Box<FieldType>),
+    Array(Box<FieldType>, u8),
 }
 
 impl HeapSize for FieldType {
@@ -60,7 +56,7 @@ impl HeapSize for FieldType {
         match self {
             &FieldType::Base(ref java_type) => java_type.size(),
             &FieldType::Object(ref java_type) => 8,
-            &FieldType::Array(ref java_type) => 8
+            &FieldType::Array(ref java_type, _) => 8
         }
     }
 }
